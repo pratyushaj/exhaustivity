@@ -2,6 +2,8 @@
 
 Investigating the extent to which the QUD and/or a speaker's prior beliefs modulate exhaustivity inference of non-generic statements (i.e. "I had a salad for dinner last night")
 
+## Research question: To what extent do prior beliefs and the locally determined QUD play a role in ad-hoc inference?
+
 ## Exhaustivity inference versus scalar implicature
 
 Exhaustivity inference: "I had a salad for dinner" --> "I had a salad for dinner, and nothing else"
@@ -35,4 +37,26 @@ Could ask participants (a la Frank et al.) to choose an image (of 3) that best r
 
 Maintain similar approach as (1), ask participants afterwards to rate on a slider if "Can one have a salad for dinner?" and the like
 
-## TBD: What will the other stimuli for these experiments look like? 
+Could also replicate the experiment from Winter 2018 where stimuli like "I had a salad for dinner" are presented and a series of responses are given.
+
+Important questions in this case:
+* What are the possible responses in case of "I had a salad for dinner" ?
+* Don't know if the possible responses are possible
+
+## Approach 3: Applying RSA to non-generic statements
+* What are the prior beliefs that come to bear on "I had a salad for dinner" ?
+    * Thoughts: A relevant prior could be the extent to which a salad is a thing you *can* have for dinner
+* Similar to Degen (2017): What are the different choices for prior beliefs given a non-generic statement inducing an ad-hoc inference, what is the highest probability QUD inferred given each level of prior belief (considering they are continuous, what is the distribution), and what is the highest probability meaning assigned to the utterance given the QUD? 
+
+## TBD: What will the other stimuli for these experiments look like?
+
+## Brainstorm: If you ask participants to choose a likely response, what are the options?
+
+Michelle: Hi, how are you?
+Friend: I'm doing well. It's good to see you. How was your day today?
+Michelle: Pretty uneventful. I had a salad for dinner.
+
+Michelle: Hi, how are you?
+Nutritionist: I'm well. I'm glad we're meeting to touch base on how well you've been incorporating healthy elements into your meals. How has that been going?
+Michelle: Pretty uneventful. I had a salad for dinner.
+
