@@ -23,6 +23,9 @@ Found that very young children do draw exhaustivity (or ad-hoc) inference, using
 
 Found that the Rational Speech Act Framework applied to "Black lives matter" showed a higher probability of "[Only] Black lives matter" assigned by speakers whose prior beliefs are that Black lives and white lives are regarded equally in society and thus inferred the QUD to be "Which lives matter?"
 
+## Judith Tonhauser - multiple cues to the QUD (prosodic cues, information structure)
+* Need to ensure that whatever's being done to the contexts are systematic enough that people can't aggress upon things like information structure
+
 ## Approach 1: Manipulating QUD via cover stories
 
 Basic duality: Instead of "Who is smart" and "Are women smart?", could be "Did you have a salad for dinner" and "What did you have for dinner?"
@@ -122,7 +125,7 @@ Is it satisfying enough if John knows any of the good coffee places, or all of t
 
 * Michelle is a young professional. She is meeting a good friend this evening, who is a strong advocate for growing tomatoes. When they meet, they greet each other, and the friend asks about her garden.
 
-11. "I bought my sister a new perfume for her birthday"
+11. "I bought my sister a perfume for her birthday"
 * Michelle is a young professional. She is meeting a good friend this evening, whom she hasn't seen in a while. When they meet, they greet each other, and the friend asks what she got her sister for her birthday.
 
 * Michelle is a young professional. She is meeting a good friend this evening, who is a strong advocate for giving perfume as a gift. When they meet, they greet each other, and the friend asks about her sister's birthday gift.
@@ -142,7 +145,7 @@ Is it satisfying enough if John knows any of the good coffee places, or all of t
 
 * Michelle is a young professional. She is meeting a good friend this evening, who believes strongly that a necklace is the perfect Mother's Day gift. When they meet, they greet each other, and the friend asks about her mom's Mother's Day gift.
 
-15. "I got a red lipstick at Sephora yesterday"
+15. "I got a lipstick at Sephora yesterday"
 * Michelle is a young professional. She is meeting a good friend this evening, whom she hasn't seen in a while. When they meet, they greet each other, and the friend asks what beauty products she's bought recently.
 
 * Michelle is a young professional. She is meeting a good friend this evening, who is a strong advocate for red lipstick. When they meet, they greet each other, and the friend asks about her makeup stash.
@@ -157,7 +160,7 @@ Is it satisfying enough if John knows any of the good coffee places, or all of t
 
 * Michelle is a young professional. She is meeting a good friend this evening, who is a strong advocate for visiting San Francisco often. When they meet, they greet each other, and the friend asks about her travels.
 
-18. "I brought my grandmother some tulips as a housewarming gift."
+18. "I brought my grandmother tulips as a housewarming gift."
 * Michelle is a young professional. She is meeting a good friend this evening, whom she hasn't seen in a while. When they meet, they greet each other, and the friend asks what she brought when she visited her grandmother.
 
 * Michelle is a young professional. She is meeting a good friend this evening, who believes that tulips make the best housewarming gift. When they meet, they greet each other, and the friend asks about her visits with her family.
@@ -177,7 +180,7 @@ Is it satisfying enough if John knows any of the good coffee places, or all of t
 
 * Michelle is a young professional. She is meeting a good friend this evening, who strongly believes that a ballad is the perfect song to sing at karaoke. When they meet, they greet each other, and the friend asks about her recent karaoke visit.
 
-22. "I had pizza for dinner, and I put bell peppers on it"
+22. "I put bell pepper on my pizza"
 * Michelle is a young professional. She is meeting a good friend this evening, whom she hasn't seen in a while. When they meet, they greet each other, and the friend asks what she had for dinner.
 
 * Michelle is a young professional. She is meeting a good friend this evening, who strongly believes that bell peppers are the single most ideal pizza topping. When they meet, they greet each other, and the friend asks about her diet.
@@ -195,7 +198,7 @@ Is it satisfying enough if John knows any of the good coffee places, or all of t
 25. "I added kale to my breakfast smoothie"
 * Michelle is a young professional. She is meeting a good friend this evening, whom she hasn't seen in a while. When they meet, they greet each other, and the friend asks what she put in her breakfast smoothie yesterday morning.
 
-* Michelle is a young professional. She is meeting a good friend this evening, who is a diehard fan of kale in smoothies. When they meet, they greet each other, and the friend asks about her breakfast smoothies.
+* Michelle is a young professional. She is meeting a good friend this evening, who is a diehard fan of kale. When they meet, they greet each other, and the friend asks about her breakfast smoothies.
 
 ## Prior probing stimuli
 Question: how exactly to ask about it?
@@ -219,4 +222,12 @@ On the other: What does Michelle's friend want to know?
     * What Michelle had for dinner
     * If Michelle had only a salad for dinner
     * question: on a slider?
+3. Did Michelle have anything else for dinner? Did Michelle only have salad for dinner? (probing the inference directly versus probing the lack of the inference)
+
+what : polar
+did: exhaustive
+
+## Action items for 8/30
+Start thinking about the fillers
+Run norming experiment by next week --> send Judith coded up experiment prior to running on MTurk
 

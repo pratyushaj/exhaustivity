@@ -30,16 +30,15 @@ function make_slides(f) {
     present_handle : function(stim) {
 
       //hiding comprehension question error messages, critical sliders
-      $(".comprehension").show();
-      $(".err").hide();
-      $(".no_response").hide();
+      //$(".comprehension").show();
+      $(".err2").hide();
+      /*$(".no_response").hide();
       $(".critical").hide();
-      $("input[type=radio]").attr("checked", null);
+      $("input[type=radio]").attr("checked", null);*/
 
       //create 2 sliders per trial, both set to null on first presentation
       this.init_sliders(); 
       exp.sliderPost1 = null;
-      exp.sliderPost2 = null;
 
       //number of answers to comprehension question wrong so far, initialized to 0
       wrong = 0;
@@ -47,7 +46,7 @@ function make_slides(f) {
       //getting access to stimuli
       this.stim = stim; //FRED: allows you to access stim in helpers
       
-      var pos = stim.POS
+      /*var pos = stim.POS
 
       $(".crit_noun").html((stim.CritNoun));
       $(".other_noun").html((stim.OtherNoun));
@@ -63,65 +62,23 @@ function make_slides(f) {
 
       //gymnastics related to critical trials 
       words = (stim.CoverStory).split(' ');
-      $(".speaker").html(words[0]);
+      $(".speaker").html(words[0]);*/
 
-		  this.n_sliders = 2;
+      $(".exhaustive").html((stim.Scenario[0]));
+      $(".polar").html((stim.Scenario[1]));
 
-    },
+		  this.n_sliders = 1;
 
-    button_comprehension : function() {
-
-      var checked_radio  = $('input[name="response"]:checked').val();
-      var correct_answer = 'flu';
-
-      console.log(this.stim.QUD);
-      console.log(checked_radio);
-
-      //determining correct answer to "Has the blah blah blah picked a blah yet?"
-      if (this.stim.QUD == 'are'){
-        correct_answer = 'yes';
-      }
-      else if (this.stim.QUD == 'who'){
-        correct_answer = 'no';
-      }
-
-      console.log(correct_answer);
-
-      //checking that comprehension question has been answered, then checking if the answer was correct 
-
-      if (checked_radio == undefined)
-      {
-        $(".no_response").show();
-      }
-      else
-      {
-        $(".no_response").hide();
-        if (checked_radio == correct_answer) //if (checked_radio == correct_answer)
-        {
-          $(".comprehension").hide();
-          $(".critical").show();
-          $(".err2").hide();
-
-        }
-        else 
-        {
-          $("input[type=radio]").attr("checked", null);
-          $(".err").show();
-          wrong++;
-        }
-
-      }
-      
     },
 
     button_critical : function() {
-      if (exp.sliderPost1 != null && exp.sliderPost2 !=null) 
+      if (exp.sliderPost1 != null) 
       {
         this.log_responses();
         _stream.apply(this); //use exp.go() if and only if there is no "present" data.
       } else 
       {
-        $(".err").show();
+        $(".err2").show();
       }
     },
 
@@ -130,9 +87,6 @@ function make_slides(f) {
         exp.sliderPost1 = ui.value;
       });
 
-      utils.make_slider("#slider1", function(event, ui) {
-        exp.sliderPost2 = ui.value;
-      });
     },
 //    make_slider_callback : function(i) {
 //      return function(event, ui) {
@@ -140,20 +94,12 @@ function make_slides(f) {
 //      };
 //    },
     log_responses : function() {
+      var str = this.stim.Scenario[0];
+      var scenario = str.replace("only ", "");
         exp.data_trials.push({
           "response" : exp.sliderPost1,
-          "wrongs" : wrong,
-          "crit_noun" : this.stim.CritNoun,
-          "response_other":exp.sliderPost2,
-          "other_noun": this.stim.OtherNoun,         
-          "predicate" : this.stim.Predicate,
-          "nounclass" : this.stim.NounClass,
-          "qud":this.stim.QUD,
-          "speaker_order":this.stim.SpeakerOrder,
-          "class" : this.stim.Class,                    
-          "block_number" : "1",      
-          "slide_number" : exp.phase,
-          "block":"cover_stories"
+          "scenario" : scenario,
+          "block":"stim_norming"
         });
     },
   });
@@ -319,14 +265,14 @@ function init() {
     exp.blocklikeability = 3;
     exp.blockidentity = 2;    
   }
-  exp.structure=["i0", "instructions1",'cover_stories','instructions2','priors', 'subj_info', 'thanks'];
+  exp.structure=["i0", "instructions1",'cover_stories', 'subj_info', 'thanks'];
   
   exp.data_trials = [];
   //make corresponding slides:
 
   exp.slides = make_slides(exp);
 
-  exp.nQs = 1+1+4+1+8+1;//
+  exp.nQs = 28;//
 
   $('.slide').hide(); //hide everything
 
