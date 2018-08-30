@@ -7,6 +7,10 @@
 function make_slides(f) {
   var   slides = {};
 
+  slides.captcha = slide({
+    name : "captcha",
+  });
+
   slides.i0 = slide({
      name : "i0",
      start: function() {
