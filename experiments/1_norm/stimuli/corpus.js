@@ -28,7 +28,7 @@ var allStimuli = [
         {"Scenario":["only lift weights at the gym","lift weights and do something else at the gym"]},
         {"Scenario":["enroll only in a pottery class","enroll in a pottery class and something else"]},
         {"Scenario":["get only a succulent to decorate one's bedroom","get a succulent and something else to decorate one's bedroom"]},
-        {"Scenario":["have a mojito at the bar","have a mojito and something else at the bar"]},
+        {"Scenario":["have only a mojito at the bar","have a mojito and something else at the bar"]},
         {"Scenario":["plant only tomatoes in the yard","plant tomatoes and something else in the yard"]},
         {"Scenario":["give only a perfume as a birthday gift","give a perfume and something else as a birthday gift"]},
         {"Scenario":["eat only cereal for breakfast","eat cereal and something else for breakfast"]},
