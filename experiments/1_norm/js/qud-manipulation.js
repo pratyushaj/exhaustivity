@@ -269,7 +269,7 @@ function init() {
     exp.blocklikeability = 3;
     exp.blockidentity = 2;    
   }
-  exp.structure=["i0", "instructions1",'cover_stories', 'subj_info', 'thanks'];
+  exp.structure=["captcha","i0", "instructions1",'cover_stories', 'subj_info', 'thanks'];
   
   exp.data_trials = [];
   //make corresponding slides:

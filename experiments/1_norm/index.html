@@ -237,7 +237,7 @@ If you agree to participate, please proceed to the study tasks.</p>
      
       $.ajax({
       type: "POST",
-      url: "http://stanford.edu/~pjavan/cgi-bin/verify.php",
+      url: "http://web.stanford.edu/~pjavan/cgi-bin/verify.php",
       data : {"captcha" : grecaptcha.getResponse()},
       success: function(data) {
         console.log(looseJsonParse(data));
