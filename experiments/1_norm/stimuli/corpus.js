@@ -44,7 +44,11 @@ var allStimuli = [
         {"Scenario":["put only bell peppers on a pizza","put bell peppers and something else on a pizza"]},
         {"Scenario":["watch only Bob's Burgers on television","watch Bob's Burgers and something else on television"]},
         {"Scenario":["swim only freestyle in the pool","swim freestyle and something else in the pool"]},
-        {"Scenario":["add only kale to a breakfast smoothie","add kale and something else to a breakfast smoothie"]}
+        {"Scenario":["add only kale to a breakfast smoothie","add kale and something else to a breakfast smoothie"]},
+        {"Scenario":["be born only in New York","be born in New York and somewhere else"]},
+        {"Scenario":["die only in Chicago","die in Chicago and somewhere else"]},
+        {"Scenario":["wear only shoes before leaving the house in the morning","wear shoes and something else before leaving the house in the morning"]},
+        {"Scenario":["drive a car only by turning it on","drive a car by turning it on and doing something else"]}
 
 ]
 

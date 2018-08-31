@@ -4,7 +4,6 @@ library(forcats)
 library(stringr)
 library(lme4)
 library(languageR)
-require(plyr)
 
 theme_set(theme_bw(18))
 source("helpers.r")
@@ -74,13 +73,43 @@ ggplot(d, aes(enjoyment)) +
 #getting all critical qud manipulation trials
 norm = d %>%
    filter(block == "stim_norming") %>%
+    filter(workerid != '13')%>%
    droplevels()
 
 
 #sanity check 
 
-p = ggplot(norm, aes(response)) + geom_histogram() + facet_wrap(~scenario) + theme(strip.text = element_text(face="bold", size=9,lineheight=5.0),strip.background = element_rect(fill="lightblue", colour="black",size=1))
-ggsave(p,file="../graphs/pilot.png")
+
+
+#ggsave(p,file="../graphs/pilot.png")
+
+#group by means 
+
+means = norm %>%
+  group_by(scenario) %>%
+  summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Scenario = fct_reorder(scenario,Mean))
+
+ggplot(norm, aes(response)) + 
+  geom_histogram() + 
+  facet_wrap(~scenario) + 
+  theme(strip.text = element_text(face="bold", size=9,lineheight=5.0),strip.background = element_rect(fill="lightblue", colour="black",size=1))+ 
+  geom_density() +
+  geom_vline(data=means,aes(xintercept=Mean),color="red")
+
+ggplot(norm, aes(response)) + 
+  geom_histogram() + 
+  facet_wrap(~workerid) + 
+  theme(strip.text = element_text(face="bold", size=9,lineheight=5.0),strip.background = element_rect(fill="lightblue", colour="black",size=1))
+
+ggplot(means, aes(x=Scenario,y=Mean)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1)) 
+ggsave("../graphs/means.pdf",height=5,width=10)
+
 # #filtering for people whose variance wasn't good enough 
 # func2 <- function(xx)
 # {
