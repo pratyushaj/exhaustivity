@@ -243,7 +243,11 @@ function makeStims() {
 		//plugging in a name and pronouns to the story and the polar/exhaustive answer choices
 		name = _.sample(names);
 		console.log(name);
-		story = story.replace('NAME',name.NAME).replace('PRONOUN',name.PRONOUN).replace('SUBJPRONOUN',name.SUBJPRONOUN);
+		story = story.replace(/NAME|PRONOUN|SUBJPRONOUN|OBJPRONOUN/gi, function(matched){
+  			return name[matched];
+		});
+
+		//story = story.replace('NAME',name.NAME).replace('PRONOUN',name.PRONOUN).replace('SUBJPRONOUN',name.SUBJPRONOUN);
 		polarChoice = polarChoice.replace('NAME',name.NAME).replace('PRONOUN',name.PRONOUN).replace('SUBJPRONOUN',name.SUBJPRONOUN).replace('OBJPRONOUN',name.OBJPRONOUN);
 		exhaustiveChoice = exhaustiveChoice.replace('NAME',name.NAME).replace('PRONOUN',name.PRONOUN).replace('SUBJPRONOUN',name.SUBJPRONOUN).replace('OBJPRONOUN',name.OBJPRONOUN);
 		
