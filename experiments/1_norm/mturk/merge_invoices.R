@@ -1,14 +1,14 @@
 # nameOfExpt from post_batches.sh
-expt <- "pilot-2"
+expt <- "experiment"
 
 # total number of subjects
-n_subj <- 120
+n_subj <- 30
 # number of subjects per batch
-n_per_batch <- 9
+n_per_batch <- 6
 
 # path to mturk folder
-path.to.mturk.folder <- "~/Documents/research/myProject/expt/mturk/"
-dirpath <- paste(path.to.mturk.folder, expt, sep="")
+path.to.mturk.folder <- "/Users/pratyushaj/projects/exhaustivity/experiments/1_norm/mturk/"
+dirpath <- path.to.mturk.folder
 
 
 num_round_dirs <- floor(n_subj/n_per_batch)
@@ -34,11 +34,11 @@ write.csv(invoice, paste(dirpath, expt, "-totalinvoice.csv", sep="") )
 
 ## Merge data sets
 
-df = do.call(rbind, lapply(1:(num_round_dirs+1), function(i) {
+df = do.call(rbind, lapply(1:(num_round_dirs), function(i) {
   print(i)
   return (read.csv(paste(dirpath,
-    'round', i, '/', expt, '-trials.csv', sep='')) %>%
-      mutate(workerid = (workerid + (i-1)*n_per_batch)))}))
+                         'round', i, '/', expt, '.csv', sep='')) %>%
+            mutate(workerid = (workerid + (i-1)*n_per_batch)))}))
 
 write.csv(df,
           paste(dirpath, expt, "-trials.csv", sep=""),
@@ -65,5 +65,3 @@ df = do.call(rbind, lapply(1:(num_round_dirs+1), function(i) {
 write.csv(df,
           paste(dirpath, expt, "-catch_trials.csv", sep=""),
           row.names=F)
-
-

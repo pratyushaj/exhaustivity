@@ -4,12 +4,16 @@ library(forcats)
 library(stringr)
 library(lme4)
 library(languageR)
+library(ggrepel)
 
 theme_set(theme_bw(18))
 source("helpers.r")
 
-d = read.table(file="../data/experiment.csv",sep=",", header=T)
+d = read.table(file="../data/1_norm/experiment-trials.csv",sep=",", header=T)
 d = as.data.frame(lapply(d, function(x) {gsub('\"',"",x)}))
+
+d2 = read.table(file="../data/1_norm/experiment.csv",sep=",", header=T)
+d2 = as.data.frame(lapply(d2, function(x) {gsub('\"',"",x)}))
 
 #hard-coded filtering for participants who reported a native language other than English --> cut out 2 participants 
 # d = d %>%
@@ -25,6 +29,11 @@ d$Trial = as.numeric(as.character(d$slide_number)) - 2
 d$Answer.time_in_minutes = as.numeric(as.character(d$Answer.time_in_minutes))
 d$age = as.numeric(as.character(d$age))
 d$response = as.numeric(as.character(d$response))
+
+d2$Trial = as.numeric(as.character(d2$slide_number)) - 2
+d2$Answer.time_in_minutes = as.numeric(as.character(d2$Answer.time_in_minutes))
+d2$age = as.numeric(as.character(d2$age))
+d2$response = as.numeric(as.character(d2$response))
 #d$response_other = as.numeric(as.character(d$response_other))
 
 #N = 158
@@ -73,30 +82,47 @@ ggplot(d, aes(enjoyment)) +
 #getting all critical qud manipulation trials
 norm = d %>%
    filter(block == "stim_norming") %>%
-    filter(workerid != '13')%>%
+    filter(workerid != '4' & workerid != '18' & workerid != '19' & workerid != '27' & workerid != '29')%>%
    droplevels()
 
+prevnorm = d2 %>%
+  filter(block == "stim_norming") %>%
+  filter(workerid != '13')%>%
+  droplevels()
 
-#sanity check 
-
-
-
-#ggsave(p,file="../graphs/pilot.png")
-
-#group by means 
-
-means = norm %>%
+means1 = norm %>%
   group_by(scenario) %>%
   summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
   ungroup() %>%
   mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
   mutate(Scenario = fct_reorder(scenario,Mean))
 
+means2 = prevnorm %>%
+  group_by(scenario) %>%
+  summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_Old = Mean,YMin_Old = YMin, YMax_Old = YMax) %>%
+  mutate(Scenario = fct_reorder(scenario,Mean))
+
+meansBoth = inner_join(means1 %>% select(Scenario,Mean_New,YMin_New, YMax_New), means2 %>% select(Scenario,Mean_Old,YMin_Old, YMax_Old),by=c("Scenario"))
+
+cor(meansBoth$Mean_New, meansBoth$Mean_Old)
+
+ggplot(meansBoth, aes(x=Mean_Old,y=Mean_New)) +
+   geom_point() +
+   geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) + 
+  geom_errorbarh(aes(xmin=YMin_Old,xmax=YMax_Old)) +
+  geom_text_repel(aes(label = Scenario),color='lightblue') +
+  geom_abline(intercept=0,slope=1,color='gray50')
+  
+  
 ggplot(norm, aes(response)) + 
   geom_histogram() + 
-  facet_wrap(~scenario) + 
-  theme(strip.text = element_text(face="bold", size=9,lineheight=5.0),strip.background = element_rect(fill="lightblue", colour="black",size=1))+ 
-  geom_density() +
+   facet_wrap(~scenario) + 
+  # theme(strip.text = element_text(face="bold", size=9,lineheight=5.0),strip.background = element_rect(fill="lightblue", colour="black",size=1))+ 
+  # geom_density() +
   geom_vline(data=means,aes(xintercept=Mean),color="red")
 
 ggplot(norm, aes(response)) + 
@@ -109,6 +135,20 @@ ggplot(means, aes(x=Scenario,y=Mean)) +
   geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1)) 
 ggsave("../graphs/means.pdf",height=5,width=10)
+
+all = rbind(norm,prevnorm)
+
+allMeans = all %>%
+  group_by(scenario) %>%
+  summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Scenario = fct_reorder(scenario,Mean))
+
+ggplot(allMeans, aes(x=Scenario,y=Mean)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1)) 
 
 # #filtering for people whose variance wasn't good enough 
 # func2 <- function(xx)
