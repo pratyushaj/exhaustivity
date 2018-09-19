@@ -160,18 +160,8 @@ function init() {
       screenW: screen.width,
       screenUW: exp.width
     };
+  
   //blocks of the experiment:
-  //shuffle array of block names, put block_names[0] in one and block_names[1] in the other 
-  block_names = _.shuffle(['likeability','identity']);
-  exp.blocklikeability = 0;
-  exp.blockidentity = 0;
-  if (block_names[0] == "likeability") {
-    exp.blocklikeability = 2;
-    exp.blockidentity = 3;
-  } else {
-    exp.blocklikeability = 3;
-    exp.blockidentity = 2;    
-  }
   exp.structure=["captcha","i0", "instructions1",'cover_stories', 'subj_info', 'thanks'];
   
   exp.data_trials = [];
