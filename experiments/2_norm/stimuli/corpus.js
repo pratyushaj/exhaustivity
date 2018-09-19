@@ -181,7 +181,7 @@ var names = _.shuffle([
 
 var stimuli = _.shuffle(makeStims());
 
-//var secondStimuli = _.shuffle(priors);
+var secondStimuli = [];
 
 //must be same number of who's and are's 
 function makeStims() {
