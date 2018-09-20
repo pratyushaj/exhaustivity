@@ -110,15 +110,15 @@ If you agree to participate, please proceed to the study tasks.</p>
 
       <p id = 'story'><span class = 'story'>{{}}</span></p>
 
-      <p id = "likely"><i>What does Michelle's friend want to know?</i></p>
+      <p id = "likely"><i>What does <span class = 'name'>{{}}</span>'s friend want to know?</i></p>
 
-      <div id = "radio_outer_container" align = "center">
-      <div id="radio_inner_container" align="left">
+      <div id = "radio_outer_container" align='center'>
 <!--      <tr><td class="left">No, somebody must be wrong.</td><td class="right">Yes, it's a matter of opinion.</td></tr> -->
       <!---<tr><td>No, somebody must be wrong.</td><td><div id="slider0" class="slider"></div></td><td>Yes, it's a matter of opinion.</td></tr>-->
-      <label><input type="radio"  id = "r1" name="response" value = "polar"/><span class = 'polar'>{{}}</span></label>
-      <br/>
-      <label><input type="radio"  id = "r2" name="response" value = "exhaustive"/><span class = 'exhaustive'>{{}}</span></label>
+      <div id = 'radio_inner_container' align='left'>
+        <label><input type="radio" id = "r1" name="response" value = "polar"/><span class = 'polar'>{{}}</span></label>
+        <br/>
+        <label><input type="radio" id = "r2" name="response" value = "exhaustive"/><span class = 'exhaustive'>{{}}</span></label>
       </div>
     </div>
     <br/>

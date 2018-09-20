@@ -75,6 +75,9 @@ function make_slides(f) {
       //story
       $(".story").html((stim.Story));
 
+      //name
+      $(".name").html((stim.Name));
+
 		  //this.n_sliders = 1;
 
     },
@@ -103,12 +106,15 @@ function make_slides(f) {
 //      };
 //    },
     log_responses : function() {
-      var str = this.stim.Scenario[0];
-      var scenario = str.replace("only ", "");
+      //var str = this.stim.Scenario[0];
+      //var scenario = str.replace("only ", "");
         exp.data_trials.push({
           "response" : $('input[name="response"]:checked').val(),
-          "scenario" : scenario,
-          "block":"stim_norming"
+          "qud":this.stim.QUD,
+          "story":this.stim.Story,
+          "scenario" : this.stim.Scenario,
+          "slide_number" : exp.phase,
+          "block":"context_norming"
         });
     },
   });
@@ -160,8 +166,9 @@ function init() {
       screenW: screen.width,
       screenUW: exp.width
     };
-  
+
   //blocks of the experiment:
+  //NEED TO RE-ADD "CAPTCHA"
   exp.structure=["captcha","i0", "instructions1",'cover_stories', 'subj_info', 'thanks'];
   
   exp.data_trials = [];
@@ -169,7 +176,7 @@ function init() {
 
   exp.slides = make_slides(exp);
 
-  exp.nQs = 33;//
+  exp.nQs = 24;//
 
   $('.slide').hide(); //hide everything
 
