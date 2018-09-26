@@ -113,6 +113,7 @@ function make_slides(f) {
           "qud":this.stim.QUD,
           "story":this.stim.Story,
           "scenario" : this.stim.Scenario,
+          "trial_type":this.stim.TrialType,
           "slide_number" : exp.phase,
           "block":"context_norming"
         });
