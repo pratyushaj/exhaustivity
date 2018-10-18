@@ -315,7 +315,7 @@ function init() {
     
   crits = _.shuffle(['qud','exhaustivity']);
 
-  exp.structure=["i0", 'instructions1',crits[0], 'instructions2',crits[1], "subj_info",'thanks'];
+  exp.structure=["captcha","i0", 'instructions1',crits[0], 'instructions2',crits[1], "subj_info",'thanks'];
 
   if (crits[0] == 'qud'){
     exp.structure[1] = 'instructions1qud'
