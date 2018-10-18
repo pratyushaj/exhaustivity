@@ -18,10 +18,22 @@ function make_slides(f) {
      }
   });
 
-  slides.instructions1 = slide({
-    name : "instructions1",
+  slides.instructions1qud = slide({
+    name : "instructions1qud",
     start: function() {
       $(".instruction_condition").html("Between subject instruction manipulation: "+ exp.instruction);
+      //$(".header").html("instructions1");
+    }, 
+    button : function() {
+      exp.go(); //use exp.go() if and only if there is no "present" data.
+    }
+  });
+
+  slides.instructions1exhaustivity = slide({
+    name : "instructions1exhaustivity",
+    start: function() {
+      $(".instruction_condition").html("Between subject instruction manipulation: "+ exp.instruction);
+      //$(".header").html("instructions1");
     }, 
     button : function() {
       exp.go(); //use exp.go() if and only if there is no "present" data.
@@ -114,16 +126,29 @@ function make_slides(f) {
           "story":this.stim.Story,
           "scenario" : this.stim.Scenario,
           "trial_type":this.stim.TrialType,
+          "topic":this.stim.Topic,
           "slide_number" : exp.phase,
           "block":"qud_assessment"
         });
     },
   });
 
-slides.instructions2 = slide({
-    name : "instructions2",
+slides.instructions2qud = slide({
+    name : "instructions2qud",
     start: function() {
       $(".instruction_condition").html("Between subject instruction manipulation: "+ exp.instruction);
+      //$(".header").html(slides.instructions1.name);
+    }, 
+    button : function() {
+      exp.go(); //use exp.go() if and only if there is no "present" data.
+    }
+  });
+
+slides.instructions2exhaustivity = slide({
+    name : "instructions2exhaustivity",
+    start: function() {
+      $(".instruction_condition").html("Between subject instruction manipulation: "+ exp.instruction);
+      //$(".header").html(slides.instructions1.name);
     }, 
     button : function() {
       exp.go(); //use exp.go() if and only if there is no "present" data.
@@ -182,7 +207,7 @@ slides.instructions2 = slide({
        $(".scenario").html((stim.Scenario));
 
       //critical question 
-      if (stim.TrialType == "exhaustivityFiller"){
+      if (stim.TrialType == "pronounFiller" || stim.TrialType == 'distributiveFiller'){
         $(".question").html((stim.Question));
 
       }
@@ -230,6 +255,7 @@ slides.instructions2 = slide({
           "story":this.stim.Story,
           "scenario" : this.stim.Scenario,
           "trial_type":this.stim.TrialType,
+          "topic":this.stim.Topic,
           "slide_number" : exp.phase,
           "block":"exhaustivity"
         });
@@ -287,8 +313,18 @@ function init() {
   //blocks of the experiment:
   //NEED TO RE-ADD "CAPTCHA"
     
-    crits = _.shuffle([['instructions1','qud'],['instructions2','exhaustivity']]);
-  exp.structure=["captcha","i0", crits[0][0],crits[0][1], crits[1][0],crits[1][1], 'thanks'];
+  crits = _.shuffle(['qud','exhaustivity']);
+
+  exp.structure=["i0", 'instructions1',crits[0], 'instructions2',crits[1], "subj_info",'thanks'];
+
+  if (crits[0] == 'qud'){
+    exp.structure[1] = 'instructions1qud'
+    exp.structure[3] = 'instructions2exhaustivity'
+  }
+  else{
+    exp.structure[1] = 'instructions1exhaustivity'
+    exp.structure[3] = 'instructions2qud'
+  }
   
   exp.data_trials = [];
   //make corresponding slides:
