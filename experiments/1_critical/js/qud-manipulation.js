@@ -318,12 +318,12 @@ function init() {
   exp.structure=["captcha","i0", 'instructions1',crits[0], 'instructions2',crits[1], "subj_info",'thanks'];
 
   if (crits[0] == 'qud'){
-    exp.structure[1] = 'instructions1qud'
-    exp.structure[3] = 'instructions2exhaustivity'
+    exp.structure[3] = 'instructions1qud'
+    exp.structure[5] = 'instructions2exhaustivity'
   }
   else{
-    exp.structure[1] = 'instructions1exhaustivity'
-    exp.structure[3] = 'instructions2qud'
+    exp.structure[3] = 'instructions1exhaustivity'
+    exp.structure[5] = 'instructions2qud'
   }
   
   exp.data_trials = [];
