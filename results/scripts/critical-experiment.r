@@ -224,9 +224,8 @@ ggplot(means, aes(x=sensitivityScoreItem,y=Mean,color=Qud)) +
   geom_smooth(method='lm')
 
 # 7. Slider response over sensitivity score (each dot is a trial)
-ggplot(exhaustivity, aes(x=sensitivityScore,y=response,color=Qud)) +
+ggplot(exhaustivity, aes(x=sensitivityScore,y=response,color=qud)) +
   geom_point() +
-  geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) + 
   geom_smooth(method='lm')
 
 # 8. Mean slider response over prior beliefs (each dot is an item)
@@ -237,7 +236,7 @@ means = exhaustivity %>%
   mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
   mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
   mutate(Qud = fct_reorder(qud,Mean)) %>%
-  left_join(priors,by=c("topic"))
+  left_join(priorsItems,by=c("topic"))
 
 ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
   geom_point() +
@@ -257,6 +256,6 @@ nrow(ad)
   
 library(lme4)
 
-m = lmer(response ~ cqud * cPrior * cSensitivity + (1 + cqud*cPrior*cSensitivity |Topic) + (1 + cqud*cPrior*cSensitivity|workerid), data=ad)
+m = lmer(response ~ cqud * cPrior * cSensitivity + (1 + cqud+cPrior+cSensitivity |Topic) + (1 + cqud+cPrior+cSensitivity|workerid), data=ad)
 
 summary(m)
