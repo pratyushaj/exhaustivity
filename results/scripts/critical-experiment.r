@@ -9,10 +9,11 @@ library(ggrepel)
 theme_set(theme_bw(18))
 source("helpers.r")
 
-d = read.table(file="../data/1_critical/pilot.csv",sep=",", header=T)
+d = read.table(file="../data/1_critical/experiment.csv",sep=",", header=T)
+# d = read.table(file="../data/1_critical/pilot.csv",sep=",", header=T)
 d = as.data.frame(lapply(d, function(x) {gsub('\"',"",x)}))
 
-priors = read.table(file="../data/1_norm/experiment-trials.csv",sep=",", header=T)
+priors = read.table(file="../data/1_norm/experiment.csv",sep=",", header=T)
 priors = as.data.frame(lapply(priors, function(x) {gsub('\"',"",x)}))
 
 #basic tenets of the dataset
@@ -20,7 +21,7 @@ head(d)
 nrow(d)
 summary(d)
 
-d$Trial = as.numeric(as.character(d$slide_number)) - 2
+d$Trial = as.numeric(as.character(d$slide_number)) - 3
 d$Answer.time_in_minutes = as.numeric(as.character(d$Answer.time_in_minutes))
 d$age = as.numeric(as.character(d$age))
 d$topic = as.factor(as.character(d$topic))
@@ -70,12 +71,16 @@ ggplot(d, aes(language)) +
 ggplot(d, aes(enjoyment)) +
   stat_count()
 
+
 #Exclusion criterion 1: response time more than 2 sd's away from mean completion time
 #Exclusion criterion 2: Slider responses not close enough to the (clearly) correct side in exh block 
 #Exclusion criterion 3: Incorrect MC response in qud block to 2 attention checks 
+# JD: we need to discuss the second two exclusion criteria
 fails = d %>%
-  filter((abs(Answer.time_in_minutes-mean(d$Answer.time_in_minutes)) > (2*sd(d$Answer.time_in_minutes))) | (block == 'exhaustivity' & trial_type == "filler" & qud == "exhaustive" & as.numeric(as.character(response)) < 0.9) | (block == 'exhaustivity' & trial_type == "filler" & qud == "polar" & as.numeric(as.character(response)) > 0.1) | (block == 'qud_assessment' & trial_type == "filler" & qud == "exhaustive" & response != 'exhaustive') | (block == 'qud_assessment' &trial_type == "filler" & qud == "polar" & response != 'polar'))%>%
-  droplevels()
+  filter((abs(Answer.time_in_minutes-mean(d$Answer.time_in_minutes)) > (2.5*sd(d$Answer.time_in_minutes)))) #%>% 
+  # filter((block == 'exhaustivity' & trial_type == "filler" & qud == "exhaustive" & as.numeric(as.character(response)) < 0.9) | (block == 'exhaustivity' & trial_type == "filler" & qud == "polar" & as.numeric(as.character(response)) > 0.1)) %>% 
+  # filter((block == 'qud_assessment' & trial_type == "filler" & qud == "exhaustive" & response != 'exhaustive') | (block == 'qud_assessment' &trial_type == "filler" & qud == "polar" & response != 'polar'))%>%
+  # droplevels()
 
 #filtering the failures
 d = d %>%
@@ -87,6 +92,9 @@ exhaustivity = d %>%
   filter(block == 'exhaustivity') %>%
   filter(trial_type == 'critical')%>%
   droplevels()
+
+# distribution of items across qud conditions
+table(exhaustivity$topic,exhaustivity$qud)
 
 exhaustivity$response = as.numeric(as.character(exhaustivity$response))
 
@@ -103,6 +111,11 @@ sensitivity = qud %>%
   spread(qud,Mean) %>%
   summarise(sensitivityScore = exhaustive - polar)
 
+# Plot sensitivities
+ggplot(sensitivity, aes(x=sensitivityScore)) +
+  geom_histogram()
+
+# Add sensitivities to datasets
 qud = qud %>%
   right_join(sensitivity, by=c('workerid'))
 
@@ -118,6 +131,7 @@ sensitivityItem = qud %>%
   summarise(sensitivityScoreItem = exhaustive - polar)
 
 #Getting mean priors over all items and adding their "topic" value (since I was stupid and didn't collect with it)
+# JD: There seems to be some sort of error here, different number of items, and arranged in wrong order. Fix
 priorsItems = priors %>%
   group_by(scenario) %>%
   summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
@@ -125,6 +139,7 @@ priorsItems = priors %>%
   mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
   mutate(Mean_Prior = Mean,YMin_Prior = YMin, YMax_Prior = YMax) %>%
   mutate(Scenario = fct_reorder(scenario,Mean)) %>%
+  arrange(desc(Scenario)) %>%
   cbind(data.frame(topic = c('kale','New York','notUsed','sandals','salmon','Chicago','notUsed','salad','cereal','pottery','lipstick','notUsed','perfume','gym','gas station','mojito','ice cream','weights','tomatoes','Twister','tulips','bell peppers','fruit basket','ballad','partner','freestyle','San Francisco','notUsed','notUsed')))
 
 priorsItems$topic = as.factor(as.character(priorsItems$topic))
@@ -143,9 +158,18 @@ means = exhaustivity %>%
   mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
   mutate(Qud = fct_reorder(qud,Mean))
 
+means_subj = exhaustivity %>%
+  group_by(qud,workerid) %>%
+  summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Mean))
+
 #plot of mean slider response (with error bars) per QUD
 ggplot(means, aes(x=qud,y=Mean)) +
   geom_bar(stat="identity") +
+  geom_line(data=means_subj,aes(group=workerid),alpha=.5,color="gray60") +
   geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1)) 
 
