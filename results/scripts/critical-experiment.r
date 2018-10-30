@@ -28,6 +28,17 @@ d$topic = as.factor(as.character(d$topic))
 
 priors$response = as.numeric(as.character(priors$response))
 
+#need to add the block number 
+
+d = d %>%
+  group_by(workerid) %>%
+  mutate(block_num = case_when (
+    slide_number > 3 & slide_number < 36 & block == 'exhaustivity' & first(block) == 'exhaustivity' ~ 1,
+    slide_number > 3 & slide_number < 16 & block == 'qud_assessment' & first(block) == 'qud_assessment' ~ 1,
+    slide_number > 36 & slide_number < 49 & block == 'qud_assessment' & last(block) == 'qud_assessment' ~ 2,
+    slide_number > 16 & slide_number < 49 & block == 'exhaustivity' & last(block) == 'exhaustivity' ~ 2)) %>%
+  ungroup()
+
 #N = 120 prior to exclusion
 length(unique(d$workerid))
 
