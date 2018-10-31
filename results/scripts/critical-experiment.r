@@ -9,7 +9,10 @@ library(ggrepel)
 theme_set(theme_bw(18))
 source("helpers.r")
 
-d = read.table(file="../data/1_critical/experiment.csv",sep=",", header=T)
+d1 = read.table(file="../data/1_critical/experiment1.csv",sep=",", header=T)
+d1$workerid = d1$workerid + 300
+d2 = read.table(file="../data/1_critical/experiment2.csv",sep=",", header=T)
+d = rbind(d1,d2)
 # d = read.table(file="../data/1_critical/pilot.csv",sep=",", header=T)
 d = as.data.frame(lapply(d, function(x) {gsub('\"',"",x)}))
 
