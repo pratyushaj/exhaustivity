@@ -28,6 +28,7 @@ d$Trial = as.numeric(as.character(d$slide_number)) - 3
 d$Answer.time_in_minutes = as.numeric(as.character(d$Answer.time_in_minutes))
 d$age = as.numeric(as.character(d$age))
 d$topic = as.factor(as.character(d$topic))
+d$slide_number = as.numeric(as.character(d$slide_number))
 
 priors$response = as.numeric(as.character(priors$response))
 
@@ -85,20 +86,44 @@ ggplot(d, aes(language)) +
 ggplot(d, aes(enjoyment)) +
   stat_count()
 
-
+#Exclusion criterion 0: native language not English 
 #Exclusion criterion 1: response time more than 2 sd's away from mean completion time
 #Exclusion criterion 2: Slider responses not close enough to the (clearly) correct side in exh block 
 #Exclusion criterion 3: Incorrect MC response in qud block to 2 attention checks 
 # JD: we need to discuss the second two exclusion criteria
-fails = d %>%
-  filter((abs(Answer.time_in_minutes-mean(d$Answer.time_in_minutes)) > (2.5*sd(d$Answer.time_in_minutes)))) #%>% 
-  # filter((block == 'exhaustivity' & trial_type == "filler" & qud == "exhaustive" & as.numeric(as.character(response)) < 0.9) | (block == 'exhaustivity' & trial_type == "filler" & qud == "polar" & as.numeric(as.character(response)) > 0.1)) %>% 
-  # filter((block == 'qud_assessment' & trial_type == "filler" & qud == "exhaustive" & response != 'exhaustive') | (block == 'qud_assessment' &trial_type == "filler" & qud == "polar" & response != 'polar'))%>%
-  # droplevels()
+
+fails0 = d %>%
+  filter(language == 'Urdu' | language == 'Italian') %>%
+  droplevels()
+
+length(unique(fails0$workerid))
+  
+fails1 = d %>%
+  filter((abs(Answer.time_in_minutes-mean(d$Answer.time_in_minutes)) > (2.5*sd(d$Answer.time_in_minutes)))) %>% 
+  droplevels()
+
+length(unique(fails1$workerid))
+
+fails2 = d %>%
+  filter((block == 'exhaustivity' & trial_type == "filler" & qud == "exhaustive" & as.numeric(as.character(response)) < 0.7) | (block == 'exhaustivity' & trial_type == "filler" & qud == "polar" & as.numeric(as.character(response)) > 0.25)) %>%
+  droplevels()
+
+# View( d %>%
+#         filter(block == 'exhaustivity' & trial_type == 'filler' & workerid %in% fails2$workerid == TRUE) %>%
+#         droplevels())
+
+length(unique(fails2$workerid))
+
+fails3 = d %>% filter((block == 'qud_assessment' & trial_type == "filler" & qud == "exhaustive" & response != 'exhaustive') | (block == 'qud_assessment' &trial_type == "filler" & qud == "polar" & response != 'polar'))%>%
+ droplevels()
+
+length(unique(fails3$workerid))
+
+#IN TOTAL, 32 EXCLUSIONS ()
 
 #filtering the failures
 d = d %>%
-  filter(workerid %in% fails$workerid == FALSE) %>%
+  filter(workerid %in% fails0$workerid == FALSE & workerid %in% fails1$workerid == FALSE & workerid %in% fails2$workerid == FALSE & workerid %in% fails3$workerid == FALSE) %>%
   droplevels()
 
 # exhaustivity block critical trials  
@@ -128,6 +153,8 @@ sensitivity = qud %>%
 # Plot sensitivities
 ggplot(sensitivity, aes(x=sensitivityScore)) +
   geom_histogram()
+ggsave(file="../graphs/1_critical/sensitivities.png")
+
 
 # Add sensitivities to datasets
 qud = qud %>%
@@ -154,7 +181,7 @@ priorsItems = priors %>%
   mutate(Mean_Prior = Mean,YMin_Prior = YMin, YMax_Prior = YMax) %>%
   mutate(Scenario = fct_reorder(scenario,Mean)) %>%
   arrange(desc(Scenario)) %>%
-  cbind(data.frame(topic = c('kale','New York','notUsed','sandals','salmon','Chicago','notUsed','salad','cereal','pottery','lipstick','notUsed','perfume','gym','gas station','mojito','ice cream','weights','tomatoes','Twister','tulips','bell peppers','fruit basket','ballad','partner','freestyle','San Francisco','notUsed','notUsed')))
+  cbind(data.frame(topic = c('bell peppers','tomatoes','salad','kale','salmon','notUsed','lipstick','sandals','notUsed','weights','notUsed','freestyle','tulips','gas station','notUsed','ballad','fruit basket','notUsed','perfume','gym','cereal','partner','San Francisco','pottery','ice cream')))
 
 priorsItems$topic = as.factor(as.character(priorsItems$topic))
 
@@ -185,7 +212,16 @@ ggplot(means, aes(x=qud,y=Mean)) +
   geom_bar(stat="identity") +
   geom_line(data=means_subj,aes(group=workerid),alpha=.5,color="gray60") +
   geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
-  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1)) 
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+ggsave(file="../graphs/1_critical/mean_slider_qud.png")
+
+ggplot(means_subj, aes(x=qud,y=Mean)) +
+  geom_bar(stat="identity") +
+  facet_wrap(~workerid) +
+  #geom_line(data=means_subj,aes(group=workerid),alpha=.5,color="gray60") +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+ggsave(file="../graphs/1_critical/mean_slider_qud_subject.png")
 
 #2. Mean proportion of "exhaustive" responses in the polar versus exhaustive QUD (from qud block)
 meanExhaustive = qud %>%
@@ -200,6 +236,35 @@ ggplot(meanExhaustive, aes(x=Qud,y=Proportion)) +
   geom_bar(stat="identity") +
   geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+ggsave(file="../graphs/1_critical/exhaustive_proportions.png")
+
+
+#WE LEFT OFF HERE!!!
+# 2*** compute proportion of exhaustive responses by qud
+cont_qud = qud %>%
+  group_by(topic,qud) %>%
+  summarise(ProportionExhaustive = mean(response == 'exhaustive')) %>%
+  ungroup()
+
+ggplot(cont_qud,aes(x=ProportionExhaustive,fill=qud))  +
+  geom_histogram(position="identity",alpha=.5)
+ggsave(file="../graphs/1_critical/exhaustive_proportions_hist.png")
+
+
+# merge back into exhaustivity
+exhaustivity = left_join(exhaustivity,cont_qud,by=c("topic","qud"))
+
+means = exhaustivity %>%
+  group_by(ProportionExhaustive,qud) %>%
+  summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response))%>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh)
+
+ggplot(means,aes(x=ProportionExhaustive,y=Mean,color=qud)) +
+  geom_point() +
+  geom_smooth(method="lm")
+ggsave(file="../graphs/1_critical/mean_slider_line.png")
+
 
 # 3. Mean proportion of "exhaustive" responses in polar versus exhaustive QUD, by subject
 meanExhaustive = qud %>%
@@ -215,6 +280,7 @@ ggplot(meanExhaustive, aes(x=Qud,y=Proportion)) +
   facet_wrap(~workerid) +
   geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+ggsave(file="../graphs/1_critical/exhaustive_proportion_subject.png")
 
 # 4. Mean proportion of "exhaustive" responses in polar versus exhaustive QUD, by item
 meanExhaustive = qud %>%
@@ -230,6 +296,8 @@ ggplot(meanExhaustive, aes(x=Qud,y=Proportion)) +
   facet_wrap(~topic) +
   geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+ggsave(file="../graphs/1_critical/exhaustive_proportion_item.png")
+
 
 # 5. Mean slider response over sensitivity score (each dot is a subject)
 means = exhaustivity %>%
@@ -245,6 +313,8 @@ ggplot(means, aes(x=sensitivityScore,y=Mean,color=Qud)) +
   geom_point() +
   geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) + 
   geom_smooth(method='lm')
+ggsave(file="../graphs/1_critical/slider_sensitivity_continuous_subject.png")
+
 
 # 6. Mean slider response over sensitivity score (each dot is an item)
 means = exhaustivity %>%
@@ -260,11 +330,15 @@ ggplot(means, aes(x=sensitivityScoreItem,y=Mean,color=Qud)) +
   geom_point() +
   geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) + 
   geom_smooth(method='lm')
+ggsave(file="../graphs/1_critical/slider_sensitivity_item.png")
+
 
 # 7. Slider response over sensitivity score (each dot is a trial)
 ggplot(exhaustivity, aes(x=sensitivityScore,y=response,color=qud)) +
   geom_point() +
   geom_smooth(method='lm')
+ggsave(file="../graphs/1_critical/slider_sensitivity_trial.png")
+
 
 # 8. Mean slider response over prior beliefs (each dot is an item)
 means = exhaustivity %>%
@@ -288,7 +362,8 @@ ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
 ad = exhaustivity %>%
      droplevels() %>%
      mutate(Topic = as.factor(as.character(topic))) %>%
-     mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Mean_Prior))
+     mutate(Prior = as.numeric(as.character(Mean_Prior))) %>%
+     mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Prior))
 
 nrow(ad)
   
