@@ -397,10 +397,14 @@ ad = exhaustivity %>%
 
 nrow(ad)
   
-library(lme4)
 
-m = lmer(response ~ cqud * cPrior * cSensitivity + (1 + cqud*cPrior*cSensitivity |Topic) + (1 + cqud*cPrior*cSensitivity|workerid), data=ad)
+
+library(lme4)
+#library(lmerTest)
+
+m = lmer(response ~ cqud * cPrior + cSensitivity + (1 + cqud*cPrior+cSensitivity |Topic) + (1 + cqud*cPrior+cSensitivity|workerid), data=ad)
 
 summary(m)
+ranova(m)
 ```
 

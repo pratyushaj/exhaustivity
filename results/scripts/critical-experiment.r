@@ -190,6 +190,31 @@ exhaustivity = exhaustivity %>%
   
 ###VISUALIZATIONS###
 
+#1. Mean slider response in terms of prior, binned by sensitivity 
+exhaustivityBins = exhaustivity %>%
+  mutate(BinSensitivity = case_when(
+    sensitivityScore <= 0 ~ "insensitive",
+    sensitivityScore == 1 ~ "max sensitive",
+    TRUE ~ "somewhat sensitive"
+  ))
+means = exhaustivityBins %>%
+  group_by(qud,topic,block_num,BinSensitivity) %>%
+  summarise(Mean = mean(response),CILow=ci.low(response),CIHigh=ci.high(response))%>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Mean)) %>%
+  left_join(priorsItems,by=c("topic"))
+
+ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
+  geom_point() +
+  #geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) +
+  #geom_errorbarh(aes(xmin=YMin_Prior,xmax=YMax_Prior)) +
+  geom_smooth(method='lm') +
+  facet_grid(block_num~BinSensitivity) +
+  labs(x = "Mean prior probability of non-exhaustive interpretation",y = 'Mean slider response (higher=less exhaustive)')
+ggsave(file="../graphs/1_critical/mean_slider_prior_sensitivitybins.png",width=12,height=10)
+
 # 1. Mean slider response (exhaustivity) in polar and exhaustive QUD conditions (from exhaustivity block)
 means = exhaustivity %>%
   group_by(qud) %>%
@@ -200,7 +225,7 @@ means = exhaustivity %>%
   mutate(Qud = fct_reorder(qud,Mean))
 
 means_subj = exhaustivity %>%
-  group_by(qud,workerid) %>%
+  group_by(qud,topic) %>%
   summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
   ungroup() %>%
   mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
@@ -217,11 +242,11 @@ ggsave(file="../graphs/1_critical/mean_slider_qud.png")
 
 ggplot(means_subj, aes(x=qud,y=Mean)) +
   geom_bar(stat="identity") +
-  facet_wrap(~workerid) +
+  facet_wrap(~topic) +
   #geom_line(data=means_subj,aes(group=workerid),alpha=.5,color="gray60") +
   geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
-ggsave(file="../graphs/1_critical/mean_slider_qud_subject.png")
+ggsave(file="../graphs/1_critical/mean_slider_qud_item.png")
 
 #2. Mean proportion of "exhaustive" responses in the polar versus exhaustive QUD (from qud block)
 meanExhaustive = qud %>%
@@ -281,6 +306,8 @@ ggplot(meanExhaustive, aes(x=Qud,y=Proportion)) +
   geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
 ggsave(file="../graphs/1_critical/exhaustive_proportion_subject.png")
+
+
 
 # 4. Mean proportion of "exhaustive" responses in polar versus exhaustive QUD, by item
 meanExhaustive = qud %>%
@@ -358,17 +385,48 @@ ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
 
 # for all continous plot, add different coloring and line of best fit for exhaustive versus polar QUD
 
+###MAKING IT SO THAT A MORE EXHAUSTIVE RESPONSE IS BIGGER 
+priorsItemsBackwards = priors %>%
+  mutate(response = 1-response) %>%
+  group_by(scenario) %>%
+  summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_Prior = Mean,YMin_Prior = YMin, YMax_Prior = YMax) %>%
+  mutate(Scenario = fct_reorder(scenario,Mean)) %>%
+  arrange(desc(Scenario)) %>%
+  cbind(data.frame(topic = c('ice cream','pottery','San Francisco','partner','cereal','gym','perfume','notUsed','fruit basket','ballad','notUsed','gas station','tulips','freestyle','notUsed','weights','notUsed','sandals','lipstick','notUsed','salmon','kale','salad','tomatoes','bell peppers'))) %>%
+  select(Mean_Prior,YMin_Prior,YMax_Prior,topic,Scenario)
+
+priorsItemsBackwards$topic = as.factor(as.character(priorsItemsBackwards$topic))
+
+exhaustivityBackwards = exhaustivity %>%
+  mutate(response = 1-response) %>%
+  left_join(priorsItemsBackwards,by=c('topic'))
+
+# 8. Mean slider response over prior beliefs (each dot is an item) BACKWARDS
+means = exhaustivityBackwards %>%
+  group_by(qud,topic) %>%
+  summarise(Mean = mean(response),CILow=ci.low(response),CIHigh=ci.high(response))%>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Mean)) %>%
+  left_join(priorsItemsBackwards,by=c("topic")) 
+
+ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud,label=topic)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) + 
+  geom_errorbarh(aes(xmin=YMin_Prior,xmax=YMax_Prior)) + 
+  geom_smooth(method='lm') +
+  geom_text(aes(label=topic),hjust=0, vjust=0)
+
 ### ANALYSIS ###
-ad = exhaustivity %>%
+ad = exhaustivityBackwards %>%
      droplevels() %>%
      mutate(Topic = as.factor(as.character(topic))) %>%
      mutate(Prior = as.numeric(as.character(Mean_Prior))) %>%
-     mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Prior))
+     mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Prior),cBlock = myCenter(as.numeric(as.character(block_num))))
 
-nrow(ad)
-  
-library(lme4)
-
-m = lmer(response ~ cqud * cPrior * cSensitivity + (1 + cqud*cPrior*cSensitivity |Topic) + (1 + cqud*cPrior*cSensitivity|workerid), data=ad)
-
+m = lmer(response ~ cPrior * cqud * cSensitivity * cBlock + (1 | Topic) +  (1 | workerid),data=ad)
 summary(m)
