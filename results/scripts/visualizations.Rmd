@@ -28,10 +28,12 @@ source("helpers.r")
 Reading in the data from the critical experiment and the norming experiment where prior beliefs were collected
 
 ```{r}
+d0 = read.table(file="../data/1_critical/experiment3.csv",sep=",", header=T)
+d0$workerid = d0$workerid + 700
 d1 = read.table(file="../data/1_critical/experiment1.csv",sep=",", header=T)
 d1$workerid = d1$workerid + 300
 d2 = read.table(file="../data/1_critical/experiment2.csv",sep=",", header=T)
-d = rbind(d1,d2)
+d = do.call("rbind", list(d0, d1, d2))
 # d = read.table(file="../data/1_critical/pilot.csv",sep=",", header=T)
 d = as.data.frame(lapply(d, function(x) {gsub('\"',"",x)}))
 priors = read.table(file="../data/1_norm/experiment.csv",sep=",", header=T)
@@ -193,6 +195,7 @@ ggplot(sensitivity, aes(x=sensitivityScore)) +
 ```{r}
 #Getting mean priors over all items and adding their "topic" value
 priorsItems = priors %>%
+  mutate(response = 1-response) %>%
   group_by(scenario) %>%
   summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
   ungroup() %>%
@@ -200,13 +203,15 @@ priorsItems = priors %>%
   mutate(Mean_Prior = Mean,YMin_Prior = YMin, YMax_Prior = YMax) %>%
   mutate(Scenario = fct_reorder(scenario,Mean)) %>%
   arrange(desc(Scenario)) %>%
-  cbind(data.frame(topic = c('bell peppers','tomatoes','salad','kale','salmon','notUsed','lipstick','sandals','notUsed','weights','notUsed','freestyle','tulips','gas station','notUsed','ballad','fruit basket','notUsed','perfume','gym','cereal','partner','San Francisco','pottery','ice cream')))
+  cbind(data.frame(topic = c('ice cream','pottery','San Francisco','partner','cereal','gym','perfume','notUsed','fruit basket','ballad','notUsed','gas station','tulips','freestyle','notUsed','weights','notUsed','sandals','lipstick','notUsed','salmon','kale','salad','tomatoes','bell peppers'))) %>%
+  select(Mean_Prior,YMin_Prior,YMax_Prior,topic,Scenario)
 
 #Making sure topic value is a factor
 priorsItems$topic = as.factor(as.character(priorsItems$topic))
 
-#Integrating priors with data 
+#Integrating priors with data and making it so that a bigger answer is more exhaustive 
 exhaustivity = exhaustivity %>%
+  mutate(response = 1-response) %>%
   left_join(priorsItems,by=c('topic'))
 ```
 
@@ -393,18 +398,21 @@ ad = exhaustivity %>%
      droplevels() %>%
      mutate(Topic = as.factor(as.character(topic))) %>%
      mutate(Prior = as.numeric(as.character(Mean_Prior))) %>%
-     mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Prior))
+     mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Prior),cBlock = myCenter(as.numeric(as.character(block_num))))
 
 nrow(ad)
   
-
-
 library(lme4)
+library(brms)
+
+
 #library(lmerTest)
 
-m = lmer(response ~ cqud * cPrior + cSensitivity + (1 + cqud*cPrior+cSensitivity |Topic) + (1 + cqud*cPrior+cSensitivity|workerid), data=ad)
+modelPrior = set_prior("uniform(-1,1)", class = "b",lb="-1",ub="1")
+
+m = brm(response ~ cqud * cPrior * cSensitivity * cBlock + (1 |Topic) + (1|workerid), save_all_pars=TRUE,data=ad,control = list(adapt_delta = 0.9999),iter = 1000,prior=modelPrior)
 
 summary(m)
-ranova(m)
+plot(m)
 ```
 
