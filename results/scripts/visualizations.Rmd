@@ -119,9 +119,9 @@ We excluded 25 participants overall (2 non-native English speaker, 6 on the basi
 
 ```{r}
 
-#Finding the failures
+#Finding the failures 
 fails0 = d %>%
-  filter(language == 'Urdu' | language == 'Italian') %>%
+  filter(language == 'Urdu' | language == 'Italian' | language == 'Spanish' | language == 'Other') %>%
   droplevels()
 
 fails1 = d %>%
@@ -390,6 +390,35 @@ ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
   geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) + 
   geom_errorbarh(aes(xmin=YMin_Prior,xmax=YMax_Prior)) + 
   geom_smooth(method='lm')
+
+#cut sensitivity into bins, plot scatterplot of prior on x-axis, exhaustivity on y axis (per subject) with lines of best fit for polar and exhaustive qud, where the exhaustivity block was presented first and second (2 x 2)
+```
+
+Mean slider response as a function of the prior, for those who are highly sensitive and highly insensitive to QUD manipulation x those who did exhaustivity first and those who did it second
+```{r}
+means = exhaustivity %>%
+  group_by(qud,topic,block_num) %>%
+  summarise(Mean = mean(response),CILow=ci.low(response),CIHigh=ci.high(response))%>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Mean)) %>%
+  left_join(priorsItems,by=c("topic")) %>%
+  left_join(sensitivityItem,by=c("topic")) %>%
+  mutate(sensitivityBinned = ntile(sensitivityScoreItem, 2)) %>%
+  mutate(sensitivityBinned = case_when(
+    sensitivityBinned == 1 ~ "insensitive",
+    sensitivityBinned == 2 ~ "max sensitive",
+    TRUE ~ "somewhat sensitive"
+  ))
+
+ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
+  geom_point() +
+  facet_grid(block_num~sensitivityBinned) +
+  geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) +
+  geom_errorbarh(aes(xmin=YMin_Prior,xmax=YMax_Prior)) +
+  geom_smooth(method='lm')
+
 ```
 
 ##Part 8: Analysis##
@@ -405,14 +434,39 @@ nrow(ad)
 library(lme4)
 library(brms)
 
-
-#library(lmerTest)
-
-modelPrior = set_prior("uniform(-1,1)", class = "b",lb="-1",ub="1")
-
-m = brm(response ~ cqud * cPrior * cSensitivity * cBlock + (1 |Topic) + (1|workerid), save_all_pars=TRUE,data=ad,control = list(adapt_delta = 0.9999),iter = 1000,prior=modelPrior)
+m = brm(response ~ cqud * cPrior * cSensitivity * cBlock + (1 + cqud * cSensitivity * cBlock |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad,control = list(adapt_delta = 0.95),iter = 1000)
 
 summary(m)
 plot(m)
+```
+
+```{r}
+#Subsetting data by block and rerunning brms models 
+ad1 = ad %>%
+  filter(block_num == 1) %>%
+  droplevels()
+
+library(lme4)
+library(brms)
+
+m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad1,control = list(adapt_delta = 0.95),iter = 1000)
+
+summary(m)
+#plot(m)
+
+```
+
+```{r}
+ad2 = ad %>%
+  filter(block_num == 2) %>%
+  droplevels()
+
+library(lme4)
+library(brms)
+
+m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad2,control = list(adapt_delta = 0.95),iter = 1000)
+
+summary(m)
+#plot(m)
 ```
 
