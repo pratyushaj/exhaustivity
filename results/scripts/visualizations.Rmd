@@ -417,12 +417,16 @@ ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
   facet_grid(block_num~sensitivityBinned) +
   geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) +
   geom_errorbarh(aes(xmin=YMin_Prior,xmax=YMax_Prior)) +
-  geom_smooth(method='lm')
+  geom_smooth()
 
 ```
 
 ##Part 8: Analysis##
 ```{r}
+#Another version of exp worth running: present context, then qud question, then critical utterance/slider
+#New pre-registration, code up experiment, write up thesis thus far 
+#Run on the 2nd-3rd 
+
 ad = exhaustivity %>%
      droplevels() %>%
      mutate(Topic = as.factor(as.character(topic))) %>%

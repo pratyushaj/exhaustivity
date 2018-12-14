@@ -1,0 +1,40 @@
+.slider {
+  /* default is width 400 and margin 10 */
+	width: 400;
+	margin:10px;
+}
+
+.progress {
+    position: absolute;
+    top: 10px;
+    right: 50%;
+    margin-right: -100;
+}
+
+.slide {
+    padding-top: 36px;
+    /*padding-bottom: 50px;*/
+
+}
+
+
+.long_form {
+    padding-top: 20px;
+}
+
+#radio_inner_container {
+    margin-left: 170px;
+    margin-right: 50px;
+}
+
+input[type="radio"] {
+  margin-right: 7;
+}
+
+#submit{
+    margin-right: 50px;
+}
+
+#likely{
+    margin-right: 30px;
+}
