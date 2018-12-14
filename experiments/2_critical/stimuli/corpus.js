@@ -234,10 +234,8 @@ var names = _.shuffle([
     {"NAME":"Ashley","PRONOUN":"her", 'SUBJPRONOUN':'she','OBJPRONOUN':'her'}
   ]);
 
-
 //secondStimuli: exhaustivity block, which is now the only block
 var secondStimuli = _.shuffle(makeStims(allStimuli,attentionChecks).concat(pronounFillers).concat(distributiveFillers));
-
 
 //must be same number of who's and are's 
 function makeStims(crit,fillers) {

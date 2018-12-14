@@ -294,7 +294,7 @@ function init() {
   //blocks of the experiment:
   //NEED TO RE-ADD "CAPTCHA"
     
-  exp.structure=["i0", 'instructions',"exhaustivity", "subj_info",'thanks'];
+  exp.structure=["captcha","i0", 'instructions',"exhaustivity", "subj_info",'thanks'];
   
   exp.data_trials = [];
   //make corresponding slides:
