@@ -61,7 +61,7 @@ var pronounFillers = [
 
 {"Story": "Jenna and her friend work at the same company, and are trading gossip about their respective teams. Her friend asks what's new on her team.","Name":"Jenna","Scenario":"Bob defied Scott, and Caroline punished him.","TrialType":"pronounFiller","Question":"Who did Caroline punish?","leftSlider":"Scott","rightSlider":"Bob","Topic":"company","Polar":"Whether or not anyone new has joined Jenna's team","Exhaustive":"All the noteworthy goings-on in Jenna's team"},
 
-{"Story": "Barbara and her friend live in the same neighborhood, and they are talking about their other neighbors. Her friend asks whether she heard what happened the other day. ","Name":"Frank","Scenario":"Claire snatched the phone from Irene, and she dialed a number.","TrialType":"pronounFiller","Question":"Who dialed a number on the phone?","leftSlider":"Irene","rightSlider":"Claire","Topic":"phone", "Polar":"Whether or not Frank knows about the recent neighbor drama","Exhaustive":"All of the things that Frank knows about the recent neighbor drama"}
+{"Story": "Barbara and her friend live in the same neighborhood, and they are talking about their other neighbors. Her friend asks whether she heard what happened the other day. ","Name":"Barbara","Scenario":"Claire snatched the phone from Irene, and she dialed a number.","TrialType":"pronounFiller","Question":"Who dialed a number on the phone?","leftSlider":"Irene","rightSlider":"Claire","Topic":"phone", "Polar":"Whether or not Barbara knows about the recent neighbor drama","Exhaustive":"All of the things that Barbara knows about the recent neighbor drama"}
 ]
 
 
