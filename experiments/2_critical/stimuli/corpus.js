@@ -234,52 +234,9 @@ var names = _.shuffle([
     {"NAME":"Ashley","PRONOUN":"her", 'SUBJPRONOUN':'she','OBJPRONOUN':'her'}
   ]);
 
-var assignments = assignToBlocks();
 
-//stimuli: qud block
-var stimuli = _.shuffle(makeStims(assignments["qudCrit"],assignments["qudAttention"]));
-
-//secondStimuli: exhaustivity block
-var secondStimuli = _.shuffle(makeStims(assignments["exhaustivityCrit"],assignments["exhaustivityAttention"]).concat(pronounFillers).concat(distributiveFillers));
-
-/*
-input: none
-output: two lists of stims, where one is the list of stims assessed for qud, and the other is a list of stims assessed for exhaustivity inference 
-purpose: randomly assign each of the 20 stims to qud or exhaustivity 
-*/
-function assignToBlocks(){
-	qud = [];
-	qudFillers = []
-	exhaustivity = [];
-	exhaustivityFillers = []
-
-	stims = _.shuffle(allStimuli);
-	attentionStims = _.shuffle(attentionChecks);
-
-	for(var i = 0; i < stims.length; i++){
-		currStim = stims[i];
-
-		if (i < 10) {
-			qud.push(currStim);
-		}
-		else{
-			exhaustivity.push(currStim);
-		}
-	}
-
-	for (var i = 0; i < attentionStims.length; i++){
-		currStim = attentionStims[i];
-		if (i < 2){
-			qudFillers.push(currStim);
-		}
-		else{
-			exhaustivityFillers.push(currStim);
-		}
-	}
-
-	return {"qudCrit":qud,"qudAttention":qudFillers,"exhaustivityCrit":exhaustivity,"exhaustivityAttention":exhaustivityFillers}
-
-}
+//secondStimuli: exhaustivity block, which is now the only block
+var secondStimuli = _.shuffle(makeStims(allStimuli,attentionChecks).concat(pronounFillers).concat(distributiveFillers));
 
 
 //must be same number of who's and are's 
@@ -303,7 +260,7 @@ function makeStims(crit,fillers) {
 		//picking a story
 		if (qud == 'polar'){
 
-			if (polar < 5){
+			if (polar < 10){
 				//stims.push(sampledStim);
 				polar++;
 			}
@@ -322,7 +279,7 @@ function makeStims(crit,fillers) {
 
 		else if (qud == 'exhaustive'){
 
-			if (exhaustive < 5){
+			if (exhaustive < 10){
 				//stims.push(sampledStim);
 				exhaustive++;
 			}
