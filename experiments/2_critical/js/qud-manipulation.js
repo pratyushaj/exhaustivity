@@ -177,14 +177,14 @@ function make_slides(f) {
 /// init ///
 function init() {
   repeatWorker = false;
-  /*(function(){
+  (function(){
     var ut_id = "pratyushaj-qud-exhaustivity";  // remember to replace this!
     if (UTWorkerLimitReached(ut_id)) {
       $('.slide').empty();
       repeatWorker = true;
       alert("You have already completed the maximum number of HITs allowed by this requester. Please click 'Return HIT' to avoid any impact on your approval rating.");
     }
-  })();*/
+  })();
 
   exp.trials = [];
   exp.catch_trials = [];
@@ -208,7 +208,7 @@ function init() {
 
   exp.slides = make_slides(exp);
 
-  exp.nQs = 49;//
+  exp.nQs = 48;//
 
   $('.slide').hide(); //hide everything
 

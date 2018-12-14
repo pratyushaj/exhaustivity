@@ -128,7 +128,7 @@ var names = _.shuffle([
     {"NAME":"Jose","PRONOUN":"his", 'SUBJPRONOUN':'he','OBJPRONOUN':'him'},
     {"NAME":"Adam","PRONOUN":"his", 'SUBJPRONOUN':'he','OBJPRONOUN':'him'},
     {"NAME":"Rick","PRONOUN":"his", 'SUBJPRONOUN':'he','OBJPRONOUN':'him'},
-    {"NAME":"Patric","PRONOUN":"his", 'SUBJPRONOUN':'he','OBJPRONOUN':'him'},
+    {"NAME":"Patrick","PRONOUN":"his", 'SUBJPRONOUN':'he','OBJPRONOUN':'him'},
     {"NAME":"Charles","PRONOUN":"his", 'SUBJPRONOUN':'he','OBJPRONOUN':'him'},
     {"NAME":"Sean","PRONOUN":"his", 'SUBJPRONOUN':'he','OBJPRONOUN':'him'},
     {"NAME":"Jason","PRONOUN":"his", 'SUBJPRONOUN':'he','OBJPRONOUN':'him'},
