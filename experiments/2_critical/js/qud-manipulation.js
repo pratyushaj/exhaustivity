@@ -301,7 +301,7 @@ function init() {
 
   exp.slides = make_slides(exp);
 
-  exp.nQs = 49;//
+  exp.nQs = 36;//
 
   $('.slide').hide(); //hide everything
 
