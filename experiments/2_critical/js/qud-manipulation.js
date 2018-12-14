@@ -176,7 +176,7 @@ function make_slides(f) {
 
 /// init ///
 function init() {
-  repeatWorker = false;
+  repeatWorker = true;
   (function(){
     var ut_id = "pratyushaj-qud-exhaustivity";  // remember to replace this!
     if (UTWorkerLimitReached(ut_id)) {
