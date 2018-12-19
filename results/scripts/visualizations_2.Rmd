@@ -1,0 +1,471 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# The effect of QUD and prior on exhaustivity: an empirical investigation#
+
+##Part 1: Set-up##
+
+Installing packages: 
+
+```{r}
+library(tidyverse)
+library(brms)
+library(forcats)
+library(stringr)
+library(lme4)
+library(languageR)
+library(ggrepel)
+```
+
+Setting theme for visualizations and adding Judith's helper functions file
+```{r}
+theme_set(theme_bw(18))
+source("helpers.r")
+```
+
+Reading in the data from the critical experiment and the norming experiment where prior beliefs were collected
+
+```{r}
+d = read.table(file="../data/2_critical/experiment.csv",sep=",", header=T)
+# d = read.table(file="../data/1_critical/pilot.csv",sep=",", header=T)
+d = as.data.frame(lapply(d, function(x) {gsub('\"',"",x)}))
+priors = read.table(file="../data/1_norm/experiment.csv",sep=",", header=T)
+priors = as.data.frame(lapply(priors, function(x) {gsub('\"',"",x)}))
+```
+
+Ensuring that different variables are correctly assigned as factors, numbers, and strings
+```{r}
+d$Trial = as.numeric(as.character(d$slide_number)) - 3
+d$Answer.time_in_minutes = as.numeric(as.character(d$Answer.time_in_minutes))
+d$age = as.numeric(as.character(d$age))
+d$topic = as.factor(as.character(d$topic))
+d$slide_number = as.numeric(as.character(d$slide_number))
+
+priors$response = as.numeric(as.character(priors$response))
+```
+
+Adding the block number via reverse engineering - block_number is 1 if it is the first of the blocks, 2 otherwise
+```{r}
+d = d %>%
+  group_by(workerid) %>%
+  mutate(block_num = case_when (
+    slide_number > 3 & slide_number < 36 & block == 'exhaustivity' & first(block) == 'exhaustivity' ~ 1,
+    slide_number > 3 & slide_number < 16 & block == 'qud_assessment' & first(block) == 'qud_assessment' ~ 1,
+    slide_number > 36 & slide_number < 49 & block == 'qud_assessment' & last(block) == 'qud_assessment' ~ 2,
+    slide_number > 16 & slide_number < 49 & block == 'exhaustivity' & last(block) == 'exhaustivity' ~ 2)) %>%
+  ungroup()
+```
+
+##Part 2: Housekeeping Plots##
+
+1. Histogram of time taken to complete the experiment (in minutes), not by participant
+```{r}
+ggplot(d, aes(Answer.time_in_minutes)) +
+   geom_histogram()
+```
+
+2. Gender breakdown of trial (not by participant)
+```{r}
+ggplot(d, aes(gender)) +
+   stat_count()
+```
+3. HIT Understanding
+```{r}
+ggplot(d, aes(asses)) +
+   stat_count()
+```
+
+4. Histogram of age by trial
+```{r}
+ggplot(d, aes(age)) +
+   geom_histogram()
+```
+
+5. Histogram of education by trial
+```{r}
+ggplot(d, aes(education)) +
+   stat_count()
+```
+
+6. Histogram of language by trial
+```{r}
+ggplot(d, aes(language)) +
+   stat_count() +
+   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+```
+7. Histogram of enjoyment by trial
+```{r}
+ggplot(d, aes(enjoyment)) +
+  stat_count()
+```
+
+##Part 3: Implementing Exclusion Criteria##
+
+The exclusion criteria for this experiment are as follows: 
+* Exclusion criterion 0: native language not English 
+* Exclusion criterion 1: response time more than 2 sd's away from mean completion time
+* Exclusion criterion 2: Slider responses not close enough to the (clearly) correct side in exh block 
+* Exclusion criterion 3: Incorrect MC response in qud block to 2 attention checks 
+* JD: we need to discuss the second two exclusion criteria
+
+We excluded 25 participants overall (2 non-native English speaker, 6 on the basis of time, and 17 on the basis of failing attention checks during either block of the experiment). 
+
+```{r}
+
+#Finding the failures 
+fails0 = d %>%
+  filter(language == 'Urdu' | language == 'Italian' | language == 'Spanish' | language == 'Other') %>%
+  droplevels()
+
+fails1 = d %>%
+  filter((abs(Answer.time_in_minutes-mean(d$Answer.time_in_minutes)) > (2.5*sd(d$Answer.time_in_minutes)))) %>% 
+  droplevels()
+
+fails2 = d %>%
+  filter((block == 'exhaustivity' & trial_type == "filler" & qud == "exhaustive" & as.numeric(as.character(response)) < 0.7) | (block == 'exhaustivity' & trial_type == "filler" & qud == "polar" & as.numeric(as.character(response)) > 0.25)) %>%
+  droplevels()
+
+fails3 = d %>% filter((block == 'qud_assessment' & trial_type == "filler" & qud == "exhaustive" & response != 'exhaustive') | (block == 'qud_assessment' &trial_type == "filler" & qud == "polar" & response != 'polar'))%>%
+ droplevels()
+
+#Filtering the failures
+d = d %>%
+  filter(workerid %in% fails0$workerid == FALSE & workerid %in% fails1$workerid == FALSE & workerid %in% fails2$workerid == FALSE & workerid %in% fails3$workerid == FALSE) %>%
+  droplevels()
+```
+
+
+##Part 4: Separating the trials into block##
+```{r}
+# exhaustivity block critical trials  
+exhaustivity = d %>%
+  filter(block == 'exhaustivity') %>%
+  filter(trial_type == 'critical')%>%
+  droplevels()
+
+exhaustivity$response = as.numeric(as.character(exhaustivity$response))
+
+# qud block critical trials only
+qud = d %>%
+  filter(block == 'qud_assessment') %>%
+  filter(trial_type == 'critical')%>%
+  droplevels()
+```
+
+##Part 5: Determining sensitivity score by subject and by item ##
+In this experiment, sensitivity score (a score that tells how susceptible slider responses are to contextual QUD manipulation) is computed by taking the proportion of exhaustive responses to trials where the context induced an exhaustive QUD and subtracting the proportion of exhaustive responses to trials where the context induced a polar QUD. 
+
+```{r}
+#Determining by-subject sensitivity score
+sensitivity = qud %>% 
+  group_by(workerid,qud) %>%
+  summarise(Mean=mean(response == 'exhaustive')) %>%
+  spread(qud,Mean) %>%
+  summarise(sensitivityScore = exhaustive - polar)
+
+#Joining by-subject sensitivity score to full datasets
+qud = qud %>%
+  right_join(sensitivity, by=c('workerid'))
+
+exhaustivity = exhaustivity %>%
+  right_join(sensitivity, by=c('workerid'))
+
+#Determining something's QUD sensitivity score:
+sensitivityItem = qud %>% 
+  group_by(topic,qud) %>%
+  summarise(Mean=mean(response == 'exhaustive')) %>%
+  spread(qud,Mean) %>%
+  summarise(sensitivityScoreItem = exhaustive - polar)
+```
+
+8. Plotting a histogram of participant sensitivity
+```{r}
+ggplot(sensitivity, aes(x=sensitivityScore)) +
+  geom_histogram()
+```
+
+## Part 6: Determining mean prior belief by item and integrating into experimental data ##
+```{r}
+#Getting mean priors over all items and adding their "topic" value
+priorsItems = priors %>%
+  mutate(response = 1-response) %>%
+  group_by(scenario) %>%
+  summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_Prior = Mean,YMin_Prior = YMin, YMax_Prior = YMax) %>%
+  mutate(Scenario = fct_reorder(scenario,Mean)) %>%
+  arrange(desc(Scenario)) %>%
+  cbind(data.frame(topic = c('ice cream','pottery','San Francisco','partner','cereal','gym','perfume','notUsed','fruit basket','ballad','notUsed','gas station','tulips','freestyle','notUsed','weights','notUsed','sandals','lipstick','notUsed','salmon','kale','salad','tomatoes','bell peppers'))) %>%
+  select(Mean_Prior,YMin_Prior,YMax_Prior,topic,Scenario)
+
+#Making sure topic value is a factor
+priorsItems$topic = as.factor(as.character(priorsItems$topic))
+
+#Integrating priors with data and making it so that a bigger answer is more exhaustive 
+exhaustivity = exhaustivity %>%
+  mutate(response = 1-response) %>%
+  left_join(priorsItems,by=c('topic'))
+```
+
+##Part 7: Critical visualizations 
+
+9. Mean slider response (from exhaustivity block) in polar and exhaustive QUD conditions
+```{r}
+means = exhaustivity %>%
+  group_by(qud) %>%
+  summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Mean))
+
+means_subj = exhaustivity %>%
+  group_by(qud,workerid) %>%
+  summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response)) %>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Mean))
+
+#plot of mean slider response (with error bars) per QUD
+ggplot(means, aes(x=qud,y=Mean)) +
+  geom_bar(stat="identity") +
+  geom_line(data=means_subj,aes(group=workerid),alpha=.5,color="gray60") +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+
+#plot of mean slider response (with error bars) per QUD per subject
+ggplot(means_subj, aes(x=qud,y=Mean)) +
+  geom_bar(stat="identity") +
+  facet_wrap(~workerid) +
+  #geom_line(data=means_subj,aes(group=workerid),alpha=.5,color="gray60") +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+```
+
+10. Proportion of exhaustive responses (from QUD assessment block) in the polar and exhaustive QUD conditions, by item as a histogram
+```{r}
+#Compute proportions of exhaustive responses by qud
+cont_qud = qud %>%
+  group_by(topic,qud) %>%
+  summarise(ProportionExhaustive = mean(response == 'exhaustive')) %>%
+  ungroup()
+
+ggplot(cont_qud,aes(x=ProportionExhaustive,fill=qud))  +
+  geom_histogram(position="identity",alpha=.5)
+```
+
+11. Proportion of exhaustive responses (from QUD assessment block) in the polar and exhaustive QUD conditions, by item as a scatterplot
+```{r}
+# merge back into exhaustivity
+exhaustivity = left_join(exhaustivity,cont_qud,by=c("topic","qud"))
+
+means = exhaustivity %>%
+  group_by(ProportionExhaustive,qud) %>%
+  summarise(Mean=mean(response),CILow=ci.low(response),CIHigh=ci.high(response))%>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh)
+
+ggplot(means,aes(x=ProportionExhaustive,y=Mean,color=qud)) +
+  geom_point() +
+  geom_smooth(method="lm")
+#ggsave(file="../graphs/1_critical/mean_slider_line.png")
+```
+
+Mean proportion of exhaustive responses in polar versus exhaustive QUD, as a bar plot
+```{r}
+#2. Mean proportion of "exhaustive" responses in the polar versus exhaustive QUD (from qud block)
+meanExhaustive = qud %>%
+  group_by(qud)%>%
+  summarise(Proportion = mean(response == 'exhaustive'),CILow=ci.low(response == 'exhaustive'),CIHigh=ci.high(response == 'exhaustive'))%>%
+  ungroup() %>%
+  mutate(YMin=Proportion-CILow,YMax=Proportion+CIHigh) %>%
+  mutate(Proportion_New = Proportion,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Proportion))
+
+ggplot(meanExhaustive, aes(x=Qud,y=Proportion)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+```
+
+
+12. Mean proportion of "exhaustive" responses in polar versus exhaustive QUD, by subject
+```{r}
+meanExhaustive = qud %>%
+  group_by(qud,workerid)%>%
+  summarise(Proportion = mean(response == 'exhaustive'),CILow=ci.low(response == 'exhaustive'),CIHigh=ci.high(response == 'exhaustive'))%>%
+  ungroup() %>%
+  mutate(YMin=Proportion-CILow,YMax=Proportion+CIHigh) %>%
+  mutate(Proportion_New = Proportion,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Proportion))
+
+ggplot(meanExhaustive, aes(x=Qud,y=Proportion)) +
+  geom_bar(stat="identity") +
+  facet_wrap(~workerid) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+```
+
+13. Mean proportion of "exhaustive" responses in polar versus exhaustive QUD, by item
+```{r}
+meanExhaustive = qud %>%
+  group_by(qud,topic)%>%
+  summarise(Proportion = mean(response == 'exhaustive'),CILow=ci.low(response == 'exhaustive'),CIHigh=ci.high(response == 'exhaustive'))%>%
+  ungroup() %>%
+  mutate(YMin=Proportion-CILow,YMax=Proportion+CIHigh) %>%
+  mutate(Proportion_New = Proportion,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Proportion))
+
+ggplot(meanExhaustive, aes(x=Qud,y=Proportion)) +
+  geom_bar(stat="identity") +
+  facet_wrap(~topic) +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+```
+
+14. Mean slider response over sensitivity score as a scatterplot (each dot is a subject)
+```{r}
+means = exhaustivity %>%
+  group_by(qud,workerid) %>%
+  summarise(Mean = mean(response),CILow=ci.low(response),CIHigh=ci.high(response))%>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Mean)) %>%
+  right_join(sensitivity,by=c("workerid"))
+
+ggplot(means, aes(x=sensitivityScore,y=Mean,color=Qud)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) + 
+  geom_smooth(method='lm')
+```
+
+15. Mean slider response over sensitivity score as a scatterplot (each dot is an item)
+```{r}
+means = exhaustivity %>%
+  group_by(qud,topic) %>%
+  summarise(Mean = mean(response),CILow=ci.low(response),CIHigh=ci.high(response))%>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Mean)) %>%
+  right_join(sensitivityItem,by=c("topic"))
+
+ggplot(means, aes(x=sensitivityScoreItem,y=Mean,color=Qud)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) + 
+  geom_smooth(method='lm')
+```
+
+16. Slider response over sensitivity score per trial as a scatterplot
+
+```{r}
+ggplot(exhaustivity, aes(x=sensitivityScore,y=response,color=qud)) +
+  geom_point() +
+  geom_smooth(method='lm')
+```
+
+17. Mean slider response over prior beliefs as a scatterplot (each dot is an item)
+```{r}
+means = exhaustivity %>%
+  group_by(qud,topic) %>%
+  summarise(Mean = mean(response),CILow=ci.low(response),CIHigh=ci.high(response))%>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Mean)) %>%
+  left_join(priorsItems,by=c("topic"))
+
+ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) + 
+  geom_errorbarh(aes(xmin=YMin_Prior,xmax=YMax_Prior)) + 
+  geom_smooth(method='lm')
+
+#cut sensitivity into bins, plot scatterplot of prior on x-axis, exhaustivity on y axis (per subject) with lines of best fit for polar and exhaustive qud, where the exhaustivity block was presented first and second (2 x 2)
+```
+
+Mean slider response as a function of the prior, for those who are highly sensitive and highly insensitive to QUD manipulation x those who did exhaustivity first and those who did it second
+```{r}
+means = exhaustivity %>%
+  group_by(qud,topic,block_num) %>%
+  summarise(Mean = mean(response),CILow=ci.low(response),CIHigh=ci.high(response))%>%
+  ungroup() %>%
+  mutate(YMin=Mean-CILow,YMax=Mean+CIHigh) %>%
+  mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
+  mutate(Qud = fct_reorder(qud,Mean)) %>%
+  left_join(priorsItems,by=c("topic")) %>%
+  left_join(sensitivityItem,by=c("topic")) %>%
+  mutate(sensitivityBinned = ntile(sensitivityScoreItem, 2)) %>%
+  mutate(sensitivityBinned = case_when(
+    sensitivityBinned == 1 ~ "insensitive",
+    sensitivityBinned == 2 ~ "max sensitive",
+    TRUE ~ "somewhat sensitive"
+  ))
+
+ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
+  geom_point() +
+  facet_grid(block_num~sensitivityBinned) +
+  geom_errorbar(aes(ymin=YMin_New,ymax=YMax_New)) +
+  geom_errorbarh(aes(xmin=YMin_Prior,xmax=YMax_Prior)) +
+  geom_smooth()
+
+```
+
+##Part 8: Analysis##
+```{r}
+#Another version of exp worth running: present context, then qud question, then critical utterance/slider
+#New pre-registration, code up experiment, write up thesis thus far 
+#Run on the 2nd-3rd 
+
+ad = exhaustivity %>%
+     droplevels() %>%
+     mutate(Topic = as.factor(as.character(topic))) %>%
+     mutate(Prior = as.numeric(as.character(Mean_Prior))) %>%
+     mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Prior),cBlock = myCenter(as.numeric(as.character(block_num))))
+
+nrow(ad)
+  
+library(lme4)
+library(brms)
+
+m = brm(response ~ cqud * cPrior * cSensitivity * cBlock + (1 + cqud * cSensitivity * cBlock |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad,control = list(adapt_delta = 0.95),iter = 1000)
+
+summary(m)
+plot(m)
+```
+
+```{r}
+#Subsetting data by block and rerunning brms models 
+ad1 = ad %>%
+  filter(block_num == 1) %>%
+  droplevels()
+
+library(lme4)
+library(brms)
+
+m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad1,control = list(adapt_delta = 0.95),iter = 1000)
+
+summary(m)
+#plot(m)
+
+```
+
+```{r}
+ad2 = ad %>%
+  filter(block_num == 2) %>%
+  droplevels()
+
+library(lme4)
+library(brms)
+
+m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad2,control = list(adapt_delta = 0.95),iter = 1000)
+
+summary(m)
+#plot(m)
+```
+
