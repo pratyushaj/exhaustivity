@@ -1,7 +1,7 @@
 ---
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 # The effect of QUD and prior on exhaustivity: an empirical investigation#
 
@@ -114,19 +114,23 @@ We excluded 25 participants overall (2 non-native English speaker, 6 on the basi
 
 ```{r}
 
-#Finding the failures 
+#Finding the failures
+#Language --> 2 excluded
 fails0 = d %>%
   filter(language == 'Urdu' | language == 'Italian' | language == 'Spanish' | language == 'Other') %>%
   droplevels()
 
+#Look at spread of response times 
 fails1 = d %>%
-  filter((abs(Answer.time_in_minutes-mean(d$Answer.time_in_minutes)) > (2.5*sd(d$Answer.time_in_minutes)))) %>% 
+  filter(Answer.time_in_minutes < 10) %>% 
   droplevels()
 
+#Slider --> 35 excluded
 fails2 = d %>%
-  filter((block == 'exhaustivity' & trial_type == "filler" & qud == "exhaustive" & as.numeric(as.character(response)) < 0.7) | (block == 'exhaustivity' & trial_type == "filler" & qud == "polar" & as.numeric(as.character(response)) > 0.25)) %>%
+  filter((block == 'exhaustivity' & trial_type == "filler" & qud == "exhaustive" & as.numeric(as.character(response)) < 0.5) | (block == 'exhaustivity' & trial_type == "filler" & qud == "polar" & as.numeric(as.character(response)) > 0.5)) %>%
   droplevels()
 
+#MC --> 22 excluded
 fails3 = d %>% filter((block == 'qud_assessment' & trial_type == "filler" & qud == "exhaustive" & response != 'exhaustive') | (block == 'qud_assessment' &trial_type == "filler" & qud == "polar" & response != 'polar'))%>%
  droplevels()
 
@@ -230,6 +234,7 @@ means_subj = exhaustivity %>%
   mutate(Mean_New = Mean,YMin_New = YMin, YMax_New = YMax) %>%
   mutate(Qud = fct_reorder(qud,Mean))
 
+#line coloring
 #plot of mean slider response (with error bars) per QUD
 ggplot(means, aes(x=qud,y=Mean)) +
   geom_bar(stat="identity") +
@@ -238,12 +243,12 @@ ggplot(means, aes(x=qud,y=Mean)) +
   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
 
 #plot of mean slider response (with error bars) per QUD per subject
-ggplot(means_subj, aes(x=qud,y=Mean)) +
-  geom_bar(stat="identity") +
-  facet_wrap(~workerid) +
-  #geom_line(data=means_subj,aes(group=workerid),alpha=.5,color="gray60") +
-  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
-  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+# ggplot(means_subj, aes(x=qud,y=Mean)) +
+#   geom_bar(stat="identity") +
+#   facet_wrap(~workerid) +
+#   #geom_line(data=means_subj,aes(group=workerid),alpha=.5,color="gray60") +
+#   geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+#   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
 ```
 
 10. Proportion of exhaustive responses (from QUD assessment block) in the polar and exhaustive QUD conditions, by item as a histogram
@@ -303,11 +308,11 @@ meanExhaustive = qud %>%
   mutate(Proportion_New = Proportion,YMin_New = YMin, YMax_New = YMax) %>%
   mutate(Qud = fct_reorder(qud,Proportion))
 
-ggplot(meanExhaustive, aes(x=Qud,y=Proportion)) +
-  geom_bar(stat="identity") +
-  facet_wrap(~workerid) +
-  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
-  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+# ggplot(meanExhaustive, aes(x=Qud,y=Proportion)) +
+  # geom_bar(stat="identity") +
+  # facet_wrap(~workerid) +
+  # geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+  # theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
 ```
 
 13. Mean proportion of "exhaustive" responses in polar versus exhaustive QUD, by item
@@ -416,56 +421,56 @@ ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
 
 ```
 
-##Part 8: Analysis##
-```{r}
-#Another version of exp worth running: present context, then qud question, then critical utterance/slider
-#New pre-registration, code up experiment, write up thesis thus far 
-#Run on the 2nd-3rd 
+<!-- ##Part 8: Analysis## -->
+<!-- ```{r} -->
+<!-- #Another version of exp worth running: present context, then qud question, then critical utterance/slider -->
+<!-- #New pre-registration, code up experiment, write up thesis thus far  -->
+<!-- #Run on the 2nd-3rd  -->
 
-ad = exhaustivity %>%
-     droplevels() %>%
-     mutate(Topic = as.factor(as.character(topic))) %>%
-     mutate(Prior = as.numeric(as.character(Mean_Prior))) %>%
-     mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Prior),cBlock = myCenter(as.numeric(as.character(block_num))))
+<!-- ad = exhaustivity %>% -->
+<!--      droplevels() %>% -->
+<!--      mutate(Topic = as.factor(as.character(topic))) %>% -->
+<!--      mutate(Prior = as.numeric(as.character(Mean_Prior))) %>% -->
+<!--      mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Prior),cBlock = myCenter(as.numeric(as.character(block_num)))) -->
 
-nrow(ad)
-  
-library(lme4)
-library(brms)
+<!-- nrow(ad) -->
 
-m = brm(response ~ cqud * cPrior * cSensitivity * cBlock + (1 + cqud * cSensitivity * cBlock |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad,control = list(adapt_delta = 0.95),iter = 1000)
+<!-- library(lme4) -->
+<!-- library(brms) -->
 
-summary(m)
-plot(m)
-```
+<!-- m = brm(response ~ cqud * cPrior * cSensitivity * cBlock + (1 + cqud * cSensitivity * cBlock |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad,control = list(adapt_delta = 0.95),iter = 1000) -->
 
-```{r}
-#Subsetting data by block and rerunning brms models 
-ad1 = ad %>%
-  filter(block_num == 1) %>%
-  droplevels()
+<!-- summary(m) -->
+<!-- plot(m) -->
+<!-- ``` -->
 
-library(lme4)
-library(brms)
+<!-- ```{r} -->
+<!-- #Subsetting data by block and rerunning brms models  -->
+<!-- ad1 = ad %>% -->
+<!--   filter(block_num == 1) %>% -->
+<!--   droplevels() -->
 
-m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad1,control = list(adapt_delta = 0.95),iter = 1000)
+<!-- library(lme4) -->
+<!-- library(brms) -->
 
-summary(m)
-#plot(m)
+<!-- m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad1,control = list(adapt_delta = 0.95),iter = 1000) -->
 
-```
+<!-- summary(m) -->
+<!-- #plot(m) -->
 
-```{r}
-ad2 = ad %>%
-  filter(block_num == 2) %>%
-  droplevels()
+<!-- ``` -->
 
-library(lme4)
-library(brms)
+<!-- ```{r} -->
+<!-- ad2 = ad %>% -->
+<!--   filter(block_num == 2) %>% -->
+<!--   droplevels() -->
 
-m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad2,control = list(adapt_delta = 0.95),iter = 1000)
+<!-- library(lme4) -->
+<!-- library(brms) -->
 
-summary(m)
-#plot(m)
-```
+<!-- m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad2,control = list(adapt_delta = 0.95),iter = 1000) -->
+
+<!-- summary(m) -->
+<!-- #plot(m) -->
+<!-- ``` -->
 

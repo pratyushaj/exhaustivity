@@ -1,7 +1,7 @@
 ---
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 # The effect of QUD and prior on exhaustivity: an empirical investigation#
 
@@ -421,56 +421,56 @@ ggplot(means, aes(x=Mean_Prior,y=Mean_New,color=Qud)) +
 
 ```
 
-##Part 8: Analysis##
-```{r}
-#Another version of exp worth running: present context, then qud question, then critical utterance/slider
-#New pre-registration, code up experiment, write up thesis thus far 
-#Run on the 2nd-3rd 
+<!-- ##Part 8: Analysis## -->
+<!-- ```{r} -->
+<!-- #Another version of exp worth running: present context, then qud question, then critical utterance/slider -->
+<!-- #New pre-registration, code up experiment, write up thesis thus far  -->
+<!-- #Run on the 2nd-3rd  -->
 
-ad = exhaustivity %>%
-     droplevels() %>%
-     mutate(Topic = as.factor(as.character(topic))) %>%
-     mutate(Prior = as.numeric(as.character(Mean_Prior))) %>%
-     mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Prior),cBlock = myCenter(as.numeric(as.character(block_num))))
+<!-- ad = exhaustivity %>% -->
+<!--      droplevels() %>% -->
+<!--      mutate(Topic = as.factor(as.character(topic))) %>% -->
+<!--      mutate(Prior = as.numeric(as.character(Mean_Prior))) %>% -->
+<!--      mutate(cqud = myCenter(qud), cSensitivity = myCenter(sensitivityScore),cPrior = myCenter(Prior),cBlock = myCenter(as.numeric(as.character(block_num)))) -->
 
-nrow(ad)
-  
-library(lme4)
-library(brms)
+<!-- nrow(ad) -->
 
-m = brm(response ~ cqud * cPrior * cSensitivity * cBlock + (1 + cqud * cSensitivity * cBlock |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad,control = list(adapt_delta = 0.95),iter = 1000)
+<!-- library(lme4) -->
+<!-- library(brms) -->
 
-summary(m)
-plot(m)
-```
+<!-- m = brm(response ~ cqud * cPrior * cSensitivity * cBlock + (1 + cqud * cSensitivity * cBlock |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad,control = list(adapt_delta = 0.95),iter = 1000) -->
 
-```{r}
-#Subsetting data by block and rerunning brms models 
-ad1 = ad %>%
-  filter(block_num == 1) %>%
-  droplevels()
+<!-- summary(m) -->
+<!-- plot(m) -->
+<!-- ``` -->
 
-library(lme4)
-library(brms)
+<!-- ```{r} -->
+<!-- #Subsetting data by block and rerunning brms models  -->
+<!-- ad1 = ad %>% -->
+<!--   filter(block_num == 1) %>% -->
+<!--   droplevels() -->
 
-m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad1,control = list(adapt_delta = 0.95),iter = 1000)
+<!-- library(lme4) -->
+<!-- library(brms) -->
 
-summary(m)
-#plot(m)
+<!-- m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad1,control = list(adapt_delta = 0.95),iter = 1000) -->
 
-```
+<!-- summary(m) -->
+<!-- #plot(m) -->
 
-```{r}
-ad2 = ad %>%
-  filter(block_num == 2) %>%
-  droplevels()
+<!-- ``` -->
 
-library(lme4)
-library(brms)
+<!-- ```{r} -->
+<!-- ad2 = ad %>% -->
+<!--   filter(block_num == 2) %>% -->
+<!--   droplevels() -->
 
-m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad2,control = list(adapt_delta = 0.95),iter = 1000)
+<!-- library(lme4) -->
+<!-- library(brms) -->
 
-summary(m)
-#plot(m)
-```
+<!-- m = brm(response ~ cqud * cPrior * cSensitivity + (1 + cqud * cSensitivity |Topic) + (1 + cqud * cPrior|workerid), save_all_pars=TRUE,data=ad2,control = list(adapt_delta = 0.95),iter = 1000) -->
+
+<!-- summary(m) -->
+<!-- #plot(m) -->
+<!-- ``` -->
 

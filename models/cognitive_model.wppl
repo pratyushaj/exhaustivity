@@ -1,0 +1,79 @@
+//sample sentence: "I ate ice cream for dessert"
+
+var alpha = 1
+
+var statePrior = function() {
+  return Categorical({
+    // ps: [.9,.04,.04,.02],
+    ps: [.25,.25,.25,.25],
+    // ps: [.04,.04,.9,.02],
+    vs: [{ice_cream:true, smth_else:true},{ice_cream:true, smth_else:false},{ice_cream:false, smth_else:true},{ice_cream:false, smth_else:false}]})
+};
+
+var qudPrior = function() {
+  return Categorical({
+    ps: [.5,.5],
+    // ps: [.9,.1],
+    // ps: [.1,.9],
+    vs: ["what_eat","did_eat_ice_cream"]
+  });
+};
+
+// possible utterances
+var utterancePrior = function() {
+  // return uniformDraw(['blm', 'nblm'])
+  uniformDraw(['ate_ice_cream', 'ate_smth_else', 'ate_icecream_smthelse', 'ate_nothing'])
+};
+
+var qudFns = {
+  did_eat_ice_cream : function(ice_cream, smth_else) {return { ice_cream: ice_cream } },
+  what_eat : function(ice_cream, smth_else) {return {ice_cream: ice_cream, smth_else: smth_else} }
+};
+
+// meaning funtion to interpret the utterances
+var literalMeanings = {
+  ate_ice_cream: function(state) { return state["ice_cream"] },
+  not_ate_ice_cream: function(state) { return  !state["ice_cream"]  },
+  ate_smth_else: function(state) { return state["smth_else"]},
+  ate_icecream_smthelse: function(state) { return state["ice_cream"] && state["smth_else"] },
+  ate_nothing: function(state) { return !state["ice_cream"] && !state["smth_else"] }
+};
+
+// literal listener
+var literalListener = cache(function(utt,qud) {
+  return Infer({method:"enumerate"},
+               function(){
+    var state = sample(statePrior())
+    var meaning = literalMeanings[utt]
+    var qudFn = qudFns[qud]
+    condition(meaning(state))
+    return qudFn(state["black"],state["white"])
+  })
+});
+
+
+// pragmatic speaker
+var speaker = cache(function(state,qud) {
+  return Infer({method:"enumerate"},
+               function(){
+    var utt = utterancePrior()
+    factor(alpha * literalListener(utt,qud).score(state))
+    // factor(params.alpha * literalListener(utt).score(state))
+    return utt
+  })
+});
+
+// pragmatic listener
+var pragmaticListener = cache(function(utt,qud) {
+  return Infer({method:"enumerate"},
+               function(){
+    var state = sample(statePrior())
+    var qudFn = qudFns[qud]
+    var qValue = qudFn(state["black"],state["white"])
+    observe(speaker(qValue,qud),utt)
+    return state
+  })
+});
+
+//pragmaticListener("blm","do_blm")
+pragmaticListener("blm","which_lm")
