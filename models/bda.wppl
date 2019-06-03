@@ -1,0 +1,130 @@
+//run using:
+//webppl bda.wppl --require webppl-json --require webppl-viz
+
+//with means - optimal alpha = 0.20975669171551964
+
+// Pull in requested data/conditions
+
+
+var expData = json.read('../results/data/models/exh-trials-within.json');
+console.log("Loading data... found " + expData.length + " data points");
+
+var dataAnalysis = function(){
+	
+	var alpha = uniformDrift({a:0, b:10, width: 0.1})
+
+	/*var cost = {
+	    kale : uniformDrift({a: 0, b: 5, w: 40/20}),
+	    nkale : uniformDrift({a: 0, b: 5, w: 40/20}),
+	    kale_else: uniformDrift({a: 0, b: 5, w: 40/20}),
+	    nothing: uniformDrift({a: 0, b: 5, w: 40/20})
+	};*/
+
+	mapData({data:expData}, function(datum) {
+
+		var statePrior = function() { 
+        return Categorical({
+          // ps: [.9,.04,.04,.02],
+          ps: [datum.Mean_Prior,1-datum.Mean_Prior,0.5,0.5],
+          //ps: [.04,.04,.9,.02],
+          vs: [{kale:true, else:false},
+               {kale:true, else:true},
+               {kale:false,else:true}, //tulips false, else true
+               {kale:false,else:false}] //tulips false else false
+        });
+      };
+      
+	    var cost = {
+	    kale : 0,
+	    nkale : 0,
+	    kale_else: 0,
+	    nothing: 0
+		};
+
+      	// possible utterances
+      	var utterancePrior = function() {
+	        return uniformDraw(['kale', 'kale_else','nkale','nothing'])
+	      };
+
+	    var qudFns = {
+	        polar : function(state) {return { kale: state['kale'] } },
+	        exhaustive : function(state) {return state}
+	      };
+
+	    // meaning funtion to interpret the utterances
+	    var literalMeanings = {
+	        kale: function(state) { return state["kale"] },
+	        nkale: function(state) { return !state["kale"]  },
+	        kale_else: function(state) { return state["kale"] && state["else"] },
+	        nothing: function(state) { return !state["kale"] && !state["else"] }
+	      };
+
+	    // literal listener
+	    var literalListener = cache(function(utt) {
+	        return Infer({method:"enumerate"}, function(){
+	          var state = sample(statePrior())
+	          var meaning = literalMeanings[utt]
+	          condition(meaning(state))
+	          return state;
+	        })
+	      });
+	      
+	    //pragmatic speaker
+	    var speaker = cache(function(state,qud) {
+	        var qudFn = qudFns[qud];
+	        return Infer({method:"enumerate"}, function(){
+	          var utt = utterancePrior()
+ 
+	          var projectedListener = Infer({method: 'enumerate'}, function() {
+	            return qudFn(sample(literalListener(utt)))
+	          });
+	          factor(alpha * (projectedListener.score(qudFn(state))
+	                          - cost[utt]))
+	          return utt
+	        })
+	      });
+	      
+	    //pragmatic listener
+	    var pragmaticListener = cache(function(utt,qud) {  
+        return Infer({method:"enumerate"}, function(){
+          var state = sample(statePrior())
+          //var qud = sample(qudPrior)
+          observe(speaker(state, qud), utt)
+          return {state:state}
+        })
+      	});
+
+	    var dist = pragmaticListener("kale","exhaustive");
+
+	    var model_prob = Math.round(100 * Math.exp(dist.score({"state":{"kale":true,"else":false}})))/100;
+
+	    //observe(dist, datum.response)
+	    //console.log("prob of exhaustivity: ",datum.Mean_Prior,"prob of non-exhaustivity: ",1-datum.Mean_Prior)
+	    //console.log(datum.topic, "alpha: ", alpha, "model prob: ",model_prob,"empirical prob: ",datum.Mean)
+
+	    observe(Gaussian({mu:model_prob,sigma:0.1}),datum.response)
+	    //condition(model_prob === datum.response)
+
+	});
+
+	return {alpha:alpha};
+}
+
+var posterior_samples = Infer({
+  method: "MCMC",
+  samples: 5000, // how many samples to obtain
+  burn: 10000,     // number of steps for algorithm to adapt
+  lag: 10,
+  verbose: true,
+  model: dataAnalysis})
+
+var maxap = (posterior_samples.MAP().val)
+
+console.log(maxap.alpha);
+
+var dist_json = JSON.stringify(posterior_samples);
+
+// probs: list of probabilities 
+// support: list of json objects, where each object is alpha:value
+
+json.write('./alpha-exh-trials-within-1.json', dist_json);

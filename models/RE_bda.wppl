@@ -1,0 +1,103 @@
+// run using:
+// webppl BDA.wppl --require ./refModule/ -- --modelVersion <colorSize> --costs <fixed> --semantics <empirical> --chainNumber <1>
+
+// modelVersion can be <colorSize> <typicality> <nominal>
+// costs can be <fixed> <empirical>
+// semantics can be <fixed> <empirical> <fixedplusempirical>
+// chain number allows you to track multiple chains in parallel
+
+// Fix some configuration options
+var config = {
+  'modelVersion' : argv.modelVersion,
+  'costs' : argv.costs,
+  'semantics' : argv.semantics,
+  'chainNumber' : _.has(argv, 'chainNumber') ? argv.chainNumber : ''
+};
+
+// Pull in requested data/conditions 
+var data = refModule.getData(config.modelVersion);
+console.log("Loading data... found" + data.length + " data points");
+
+var getSemanticParams = function(semantics) {
+  if(semantics === 'fixed') {
+    return {
+      colorTyp : uniformDrift({a: .5, b: 1, w: .5/20}),
+      sizeTyp : config.modelVersion == 'colorSize' ? uniformDrift({a: .5, b: 1, w: .5/20}) : 0,
+      typeTyp : config.modelVersion == 'typicality' ? uniformDrift({a: .5, b: 1, w: .5/20}) : 0,
+      typWeight : 1
+    };
+  } else if (semantics === 'empirical') {
+    return {
+      typWeight :  uniformDrift({a: 0, b: 5, w: 1})
+    };
+  } else if (semantics === 'truthconditionalplusempirical') {
+    return {
+      typWeight :  uniformDrift({a: 0, b: 5, w: 1}),
+      fixedVsEmpirical: uniformDrift({a: 0, b: 1, w: 1/20})      
+    };
+  } else {
+    console.error('unknown modelspecification: model version: ' + config.modelVersion +
+		  '; costs: ' + config.costs + '; semantics: ' + config.semantics);
+  }
+};
+
+var paramPrior = function() {
+  // Params shared by all versions of the model
+  var baseParams = {
+    infWeight : uniformDrift({a: 0, b: 20, w: 3})
+  };
+
+  var costParams = (config.costs === 'fixed'  ? {
+    colorCost : uniformDrift({a: 0, b: 5, w: 40/20}),
+    sizeCost :  config.modelVersion == 'colorSize' ? uniformDrift({a: 0, b: 5, w: 40/20}) : 0,
+    typeCost :  config.modelVersion == 'typicality' ? uniformDrift({a: 0, b: 5, w: 40/20}) : 0
+  } : config.costs === 'none' ? {
+    colorCost: 0, sizeCost: 0, typeCost: 0
+  } : config.costs === 'empirical' ? {
+    lengthCostWeight : uniformDrift({a: 0, b: 5, w: 1}),
+    freqCostWeight :   uniformDrift({a: 0, b: 5, w: 1})
+  } : console.error('unknown modelspecification: ' + config.modelVersion + ' ' +
+		    config.costs + ' ' + config.semantics));
+  
+  var semanticParams = (
+    config.semantics == 'fixedplusempirical' ?
+      extend(getSemanticParams('fixed'), getSemanticParams('empirical'),
+	     {fixedVsEmpirical: uniformDrift({a: 0, b: 1, w: 1/20})}) :
+      getSemanticParams(config.semantics));
+  return extend(config, baseParams, costParams, semanticParams);
+};
+
+var modelAnalysis = function() {
+  var params = paramPrior();
+  var lexicon = refModule.constructLexicon(params);
+
+  var modelParams = extend(params, {lexicon});
+
+  globalStore.likelihood = 0;
+  mapData({data: data}, function(datum) {
+    var score = refModule.getSpeakerScore(datum.response, datum.context[0], datum.context, modelParams);
+    globalStore.likelihood += score;
+    factor(score);
+  });
+
+  console.log(globalStore.likelihood);
+  
+  var paramsKey = _.values(_.omit(params, ['chainNumber', 'modelVersion','costs','semantics'])).join(',');
+  return {
+    output : _.zipObject([paramsKey], [globalStore.likelihood]),
+    version: params.modelVersion + '_cost-' + params.costs + '_sem-' + params.semantics + '_params:obj',
+    chainNumber: config.chainNumber
+  };
+};
+
+// Some versions take longer to run than others, so we tune settings to match
+var inferenceSettings = {
+  model: modelAnalysis, method:'MCMC', verbose: true,
+  samples: 2000,
+  lag: 10,
+  burn: 20000
+};
+
+var outputERP = Infer(inferenceSettings);
+
+refModule.bayesianErpWriter(outputERP);

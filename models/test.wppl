@@ -1,0 +1,6 @@
+
+// run with webppl test.wppl --require webppl-viz
+
+var dist =  Gaussian({mu: 4, sigma: 0.1});
+
+display(dist);

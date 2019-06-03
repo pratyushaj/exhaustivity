@@ -9,11 +9,11 @@ library(ggrepel)
 theme_set(theme_bw(18))
 source("helpers.r")
 
-d = read.table(file="../data/2_norm/experiment-trials.csv",sep=",", header=T)
+d = read.table(file="../data/1_norm/experiment.csv",sep=",", header=T)
 d = as.data.frame(lapply(d, function(x) {gsub('\"',"",x)}))
 
-#d2 = read.table(file="../data/1_norm/experiment.csv",sep=",", header=T)
-#d2 = as.data.frame(lapply(d2, function(x) {gsub('\"',"",x)}))
+d2 = read.table(file="../data/1_norm/experiment2.csv",sep=",", header=T)
+d2 = as.data.frame(lapply(d2, function(x) {gsub('\"',"",x)}))
 
 #hard-coded filtering for participants who reported a native language other than English --> cut out 2 participants 
 # d = d %>%
@@ -31,6 +31,13 @@ d$age = as.numeric(as.character(d$age))
 d$response = as.factor(as.character(d$response))
 d$trial_type = as.factor(as.character(d$trial_type))
 d$qud = as.factor(as.character(d$qud))
+
+d2$Trial = as.numeric(as.character(d$slide_number)) - 2
+d2$Answer.time_in_minutes = as.numeric(as.character(d$Answer.time_in_minutes))
+d2$age = as.numeric(as.character(d$age))
+d2$response = as.factor(as.character(d$response))
+d2$trial_type = as.factor(as.character(d$trial_type))
+d2$qud = as.factor(as.character(d$qud))
 
 
 #N = 40
@@ -186,6 +193,11 @@ allMeans = all %>%
   mutate(Scenario = fct_reorder(scenario,Mean))
 
 ggplot(allMeans, aes(x=Scenario,y=Mean)) +
+  geom_bar(stat="identity") +
+  geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
+  theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1)) 
+
+ggplot(means1, aes(x=Scenario,y=Mean)) +
   geom_bar(stat="identity") +
   geom_errorbar(aes(ymin=YMin,ymax=YMax),width=.25) +
   theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1)) 

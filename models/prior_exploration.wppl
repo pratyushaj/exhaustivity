@@ -1,0 +1,113 @@
+
+//run using: webppl prior_exploration.wppl --require webppl-json
+
+// ,{name: "trained_exh_trials",alpha:0.34132564739481774},{name:"trained_exh_polar_trials",alpha:1.9942920083000206}
+
+var alphas = [{name: "trained_exh_trials",alpha:0.3475749552244443}]
+
+var priors = json.read('../results/data/models/priors.json');
+
+console.log("Loading data... found " + priors.length + " data points");
+
+var modelAnalysis = function(){
+
+  mapData({data: alphas}, function(item){
+
+    var items = mapData({data: priors}, function(datum) {
+      
+      var alpha = item.alpha;
+      
+      console.log(datum.topic,datum.Mean_Prior, 1-datum.Mean_Prior);
+      
+      var statePrior = function() { 
+        return Categorical({
+          // ps: [.9,.04,.04,.02],
+          ps: [datum.Mean_Prior,1-datum.Mean_Prior,0.5,0.5],
+          //ps: [.04,.04,.9,.02],
+          vs: [{kale:true, else:false},
+               {kale:true, else:true},
+               {kale:false,else:true}, //tulips false, else true
+               {kale:false,else:false}] //tulips false else false
+        });
+      };
+      
+      var cost = {
+        kale : 0,
+        nkale : 0,
+        kale_else: 0,
+        nothing: 0
+      };
+
+      // possible utterances
+      var utterancePrior = function() {
+        return uniformDraw(['kale', 'kale_else','nkale','nothing'])
+      };
+
+      var qudFns = {
+        polar : function(state) {return { kale: state['kale'] } },
+        exhaustive : function(state) {return state}
+      };
+
+      // meaning funtion to interpret the utterances
+      var literalMeanings = {
+        kale: function(state) { return state["kale"] },
+        nkale: function(state) { return !state["kale"]  },
+        kale_else: function(state) { return state["kale"] && state["else"] },
+        nothing: function(state) { return !state["kale"] && !state["else"] }
+      };
+
+      // literal listener
+      var literalListener = cache(function(utt) {
+        return Infer({method:"enumerate"}, function(){
+          var state = sample(statePrior())
+          var meaning = literalMeanings[utt]
+          condition(meaning(state))
+          return state;
+        })
+      });
+      
+      //pragmatic speaker
+      var speaker = cache(function(state,qud) {
+        var qudFn = qudFns[qud];
+        return Infer({method:"enumerate"}, function(){
+          var utt = utterancePrior()
+          var projectedListener = Infer({method: 'enumerate'}, function() {
+            return qudFn(sample(literalListener(utt)))
+          });
+          factor(alpha * (projectedListener.score(qudFn(state))
+                          - cost[utt]))
+          return utt
+        })
+      });
+      
+      //pragmatic listener
+      var pragmaticListener = cache(function(utt,qud) {  
+        return Infer({method:"enumerate"}, function(){
+          var state = sample(statePrior())
+          //var qud = sample(qudPrior)
+          observe(speaker(state, qud), utt)
+          return {state:state}
+        })
+      });
+    
+      
+      var l1 = pragmaticListener("kale","exhaustive");
+
+      var l0 = literalListener("kale");
+
+      var pragListenerExhProb = marginalize(l1,"state")['params']['dist']['{"kale":true,"else":false}']['prob'];
+
+      //console.log(l0['params']['dist']['{"kale":true,"else":false}']['prob']);
+      
+      var literalListenerExhProb = l0['params']['dist']['{"kale":true,"else":false}']['prob'];
+
+      return {alpha:alpha,l1_prob: pragListenerExhProb,l0_prob: literalListenerExhProb, exp_prob: datum.Mean, item: datum.topic, qud: datum.qud,prior:datum.Mean_Prior};
+
+    });
+
+    json.write('../results/data/models/'+item.name+'.json',items);
+  });
+};
+
+modelAnalysis();
+  
